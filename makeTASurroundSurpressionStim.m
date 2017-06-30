@@ -9,7 +9,7 @@ saveFigs = 0;
 %% Add paths
 
 %% file i/o
-stimDir = '/Users/luisramirez/Documents/Boston University/Ling Lab/taSurroundSurpression/stimuli';
+stimDir = '/Users/luisramirez/Documents/Boston University/Ling Lab/taSurroundSurpression/stimuli'; %where to store stimulus file
 stimFile = ['taSurroundSurpression' num2str(run)]; %name of stimulus file
 
 %% Screen setup
