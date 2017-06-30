@@ -10,7 +10,7 @@ saveFigs = 0;
 
 %% file i/o
 stimDir = '/Users/luisramirez/Documents/Boston University/Ling Lab/taSurroundSurpression/stimuli';
-stimFile = ['taSurroundSurpression' num2str(run)];
+stimFile = ['taSurroundSurpression' num2str(run)]; %name of stimulus file
 
 %% Screen setup
 
