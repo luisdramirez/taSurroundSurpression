@@ -8,6 +8,7 @@
 % Code written by IB & YW
 
 %%% PREPARE AND COLLECT INFO
+commandwindow
 echo off
 clear all
 close all
@@ -29,7 +30,8 @@ PsychPowerMate('SetBrightness', powermate, 20);
 % Check which devicenumber the keyboard is assigned to
 deviceNumber = 0;
 [keyBoardIndices, ProductNames] = GetKeyboardIndices;
-deviceString = 'Apple Inc. Apple Keyboard';
+deviceString = 'Corsair Corsair K95W Gaming Keyboard';
+% deviceString = 'Apple Inc. Apple Keyboard';
 % deviceString = 'Apple Keyboard';
 % deviceString = 'CHICONY USB Keyboard';
 for i = 1:length(ProductNames)
@@ -44,7 +46,7 @@ end
 
 %set directory
 expdir = pwd; %Set the experimental directory to the current directory 'pwd'
-datadir = 'Data'; %Set the path to a directory called 'Data'
+datadir = 'data'; %Set the path to a directory called 'Data'
 t.MySeed = sum(100*clock);
 rng(t.MySeed); % make sure we start with a random seed
 t.TheDate = datestr(now,'yymmdd'); %Collect todays date
@@ -104,7 +106,7 @@ p.TrialEvents = [p.TrialEvents Order(:); [BaselineConditions(:) [[Contrasts(:,1)
 p.numTrials = size(p.TrialEvents,1); % multiple of locations and possible targets
 whichOrientation =  randsample(1:180, p.numTrials, true);
 p.TrialEvents(:,5) = whichOrientation';
-p.TrialEvents = shuffleDB(p.TrialEvents);
+p.TrialEvents = Shuffle(p.TrialEvents);
 
 % size parameters
 p.CenterSize = round(1 * p.ppd);
@@ -172,10 +174,10 @@ for n = 1:p.numTrials
 end
 
 %%%WINDOW SETUP
-[window,rect] = Screen('OpenWindow', Screens(1), p.Grey);
+[window,rect] = Screen('OpenWindow', Screens(2), p.Grey);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
-load('MyGammaTable.mat');
-Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
+% load('MyGammaTable.mat');
+% Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
 HideCursor;
 white = 255; green = [0 255 0];
 
