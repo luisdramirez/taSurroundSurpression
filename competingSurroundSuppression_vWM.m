@@ -81,7 +81,7 @@ t.flicker = 0.025;
 
 %%% GRATING PARAMETERS
 p.stimConfigurations = 4; % 1 = simultaneous, 2 = sequentially - center first, 3 = sequentially - surround first
-p.numContrasts = 4;
+p.numContrasts = 1;
 p.testContrasts = 10.^linspace(log10(0.1),log10(0.75),p.numContrasts);
 p.surroundContrast = p.testContrasts; % same possible surround contrasts as center
 
@@ -106,7 +106,7 @@ p.TrialEvents = [p.TrialEvents Order(:); [BaselineConditions(:) [[Contrasts(:,1)
 p.numTrials = size(p.TrialEvents,1); % multiple of locations and possible targets
 whichOrientation =  randsample(1:180, p.numTrials, true);
 p.TrialEvents(:,5) = whichOrientation';
-p.TrialEvents = Shuffle(p.TrialEvents);
+% p.TrialEvents = Shuffle(p.TrialEvents);
 
 % size parameters
 p.CenterSize = round(1 * p.ppd);

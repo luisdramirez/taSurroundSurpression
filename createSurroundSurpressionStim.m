@@ -1,16 +1,17 @@
 %%% createSurroundSurpressionStim
 commandwindow
 testingOn = 1; % option to test stimuli
+param.numTrials = 16;
 
 if testingOn
     % Screen setup
     PsychDefaultSetup(2); % default values for PTB
     screenNumber = max(Screen('Screens')); % fix display to most external display
     param.screenWidthPixels = Screen('Rect', screenNumber); % screen width in pixels 
-    screenWidth = [];
-    viewDistance = [];
+    screenWidth = 36; % cm
+    viewDistance = 68; %cm
     visAngle = (2*atan2(screenWidth/2, viewDistance))*(180/pi); % visual angle of the whole screen
-    param.pixPerDeg = round(p.screenWidthPixels(3)/visAngle); % pixels per degree visual angle
+    param.pixPerDeg = round(param.screenWidthPixels(3)/visAngle); % pixels per degree visual angle
     
     % Defining colors
     param.white = WhiteIndex(screenNumber);
@@ -20,6 +21,7 @@ if testingOn
     
     % Skipping sync sests
     %Screen('Preference', 'SkipSyncTests', 2);
+end
     
     % Open the screen
     [window, windowRect] = Screen('OpenWindow', screenNumber, param.grey);
@@ -41,12 +43,10 @@ if testingOn
     
     Screen('TextStyle', window, 1);
     Screen('TextSize', window, 16);
-end
-
 
 %% timing
 timing.stimOn = 1; % stimulus on screen (s)
-timing.iti = 0.3; % inter-trial interval(s)
+timing.iti = 0.3; % inter-trial interval(    [window, windowRect] = Screen('OpenWindow', screenNumber, param.grey);
 timing.flickerTime = 0.2; % (s)
 timing.flicker = 0.025; % (s)
 %% grating parameters
@@ -62,6 +62,7 @@ param.gapSize = round(0.08 * param.pixPerDeg); % space between inner and outer s
 param.outerFixation = round(0.05 * param.pixPerDeg);
 param.innerFixation = param.outerFixation / 1.5;
 
+% Parameters for stimulus
 freq = 2;
 param.freq = param.centerSize / param.pixPerDeg * freq;
 param.freqSurround = param.surroundSize / param.pixPerDeg * freq;
@@ -93,8 +94,8 @@ transparencyMask = zeros(param.surroundSize); transparencyMask(eccen >= ((param.
 [Xs,Ys] = meshgrid(0:(param.surroundSize-1),0:(param.surroundSize-1));
 
 % Make checkerboard
-checker1 = (square(p.freqSurround*2*pi/param.surroundSize*(Xs.*sin(param.orientationChecker(1)*(pi/180))+Ys.*cos(param.orientationChecker(1)*(pi/180)))-param.phaseChecker(1)));
-checker2 = (square(p.freqSurround*2*pi/param.surroundSize*(Xs.*sin(param.orientationChecker(2)*(pi/180))+Ys.*cos(param.orientationChecker(2)*(pi/180)))-param.phaseChecker(2)));
+checker1 = (square(param.freqSurround*2*pi/param.surroundSize*(Xs.*sin(param.orientationChecker(1)*(pi/180))+Ys.*cos(param.orientationChecker(1)*(pi/180)))-param.phaseChecker(1)));
+checker2 = (square(param.freqSurround*2*pi/param.surroundSize*(Xs.*sin(param.orientationChecker(2)*(pi/180))+Ys.*cos(param.orientationChecker(2)*(pi/180)))-param.phaseChecker(2)));
 fullChecker = (checker1.*checker2) .* surroundGaussian;
 fullCheckerNeg = (fullChecker*-1);
 fullChecker = fullChecker * (param.grey-1) + param.grey;
@@ -121,4 +122,10 @@ for n = 1:param.numTrials
 end
 
 
+% Make and Draw Textures
 
+for n = 1:param.numTrials
+    
+    centerStimulus = Screen('MakeTexture', window, squeeze(centerGrating(n,:,:))* (param.trialEvents(n,2) * param.grey) + param.grey);
+    surroundStimulus = Scren()
+end
