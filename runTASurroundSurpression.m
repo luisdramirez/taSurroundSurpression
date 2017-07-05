@@ -19,17 +19,23 @@ KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
 p.subject = '101';
+p.repetitions = 4; % has to be a multiple of 2 unique repetitions per run
+usePowerMate = 'Yes';
 
-p.repetitions = 2; % has to be a multiple of 2 unique repetitions per run
+switch usePowerMate
+    case 'Yes'
+        % Check which devicenumber the powermate is assigned to
+        powermate = PsychPowerMate('Open');
+        if isempty(powermate)
+            error('problem with the powermate');
+        end
 
-% Check which devicenumber the powermate is assigned to
-powermate = PsychPowerMate('Open');
-if isempty(powermate)
-    error('problem with the powermate');
+        % Controls the brightness of the powermate color
+        PsychPowerMate('SetBrightness', powermate, 200);
+    case 'No'
+    otherwise
+        error('Option not recognized')
 end
-
-% Controls the brightness of the powermate color
-PsychPowerMate('SetBrightness', powermate, 20);
 
 % Check which devicenumber the keyboard is assigned to
 deviceNumber = 0;
@@ -82,7 +88,7 @@ t.startTime = 2; % (s)
 t.responseTime = []; % (s)
 t.flickerTime = 0.2; % (s)
 t.flicker = 0.025; % (s)
-t.cueDur = 0.5; % (s)
+t.cueDur = 0.125; % (s)
 
 %% SOUND SETUP
 InitializePsychSound(1); % 1 for precise timing
@@ -98,6 +104,10 @@ for iTone = 1:numel(cueFreqs)
     tone = MakeBeep(cueFreqs(iTone), t.cueDur, Fs);
     cueTones(iTone,:) = applyEnvelope(tone, Fs);
 end
+
+%playSound(pahandle, cueTones(1,:)*soundAmp);
+%playSound(pahandle, cueTones(2,:)*soundAmp);
+
 
 %% GRATING PARAMETERS
 p.stimConfigurations = 4; % 1 = simultaneous, 2 = sequentially - center first, 3 = sequentially - surround first, 4 = ?
@@ -126,7 +136,26 @@ p.trialEvents = [p.trialEvents order(:); [baselineConditions(:) [[contrasts(:,1)
 p.numTrials = size(p.trialEvents,1); % multiple of locations and possible targets
 whichOrientation =  randsample(1:180, p.numTrials, true);
 p.trialEvents(:,5) = whichOrientation';
-% p.trialEvents = Shuffle(p.trialEvents); % [stimConfiguration, testContrast, surroundContrast, , orientation]
+
+% Assign pre,post cues 
+cueValidity = 1; % probability of cue validity
+p.numValidTrials = cueValidity * p.numTrials; p.numInvalidTrials = p.numTrials - p.numValidTrials; % distribution of valid and invalid trials
+valids = ones(p.numValidTrials, 1); % all ones, representing valid cues for the trial
+invalids = 2*ones(p.numInvalidTrials, 1); % all twos, representing invalid cues for the trial
+whichCueValidity = [valids;invalids]; % combine the valid and invalid vectors
+p.trialEvents(:,6) = whichCueValidity;
+
+% possibleCues = [1 1 2 2 1 2 2 1];
+% possibleCues = unique(nchoosek(possibleCues,2), 'rows');
+
+possibleValids = [1 1; 2 2];
+possibleValids = repmat(possibleValids, p.numValidTrials/size(possibleValids,1),1);
+possibleInvalids = [1 2; 2 1];
+possibleInvalids = repmat(possibleInvalids, p.numInvalidTrials/size(possibleInvalids,1),1);
+trialCues = [possibleValids; possibleInvalids];
+
+p.trialEvents(:,7:8) = trialCues;
+% p.trialEvents = Shuffle(p.trialEvents); % [stimConfiguration, testContrast, surroundContrast, stimConfiguration, orientation, cueValidity, preCue, postCue]
 
 % size parameters
 p.centerSize = round(1 * p.pixPerDeg);
@@ -145,6 +174,8 @@ p.phase = reshape(p.phase, [p.numTrials 4]);
 p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
 p.orientationChecker = [0 90];
 p.phaseChecker = [0 180];
+
+
 
 %% CREATE STIMULI
 % make mask to create circle for the center grating
@@ -280,8 +311,7 @@ for n = 1:p.numTrials
     checkerMaskPos = Screen('MakeTexture', window, fullChecker);
     checkerMaskNeg = Screen('MakeTexture', window, fullCheckerNeg);
     
-    playSound(pahandle, cueTones(1,:)*soundAmp); % play pre-cue
-    WaitSecs(1)
+    playSound(pahandle, cueTones(p.trialEvents(n,6),:)*soundAmp); % play pre-cue
 
     if p.trialEvents(n,1) ~= 4 && p.trialEvents(n,4) == 1
         Screen('DrawTexture', window, centerStimulus, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
@@ -342,8 +372,7 @@ for n = 1:p.numTrials
 
     end
 
-    playSound(pahandle, cueTones(2,:)*soundAmp); % play post-cue
-    WaitSecs(1)
+    playSound(pahandle, cueTones(p.trialEvents(n,6),:)*soundAmp); % play post-cue
     
     % retention interval
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
@@ -369,64 +398,82 @@ for n = 1:p.numTrials
     Screen('Flip', window);
     startTrial = GetSecs; % get the start time of each trial
     
-    [~, startAngle] = PsychPowerMate('Get', powermate);
+    
     estContrast = p.probeContrast(n);
-    
-    while 1 % start inf loop
-        % Query PowerMate button state and rotation angle in "clicks"
-        [pmButton, angle] = PsychPowerMate('Get', powermate);
-        % 1st button is the "or" of the 1st mouse button and the actual PowerMate button
-        if startAngle ~= angle
-            
-            % Convert turn of dial first to degrees and then to contrast:
-            %             angles = (angle * 3.8298)/360;
-            angles = ((startAngle-angle)*3.8298);
-            changeContrast = angles/360;
-            estContrast = estContrast - changeContrast; % update the contrast relative to last dial position
-            % Make sure we stay in range
-            
-            if estContrast > 1
-                estContrast = 1;
-            elseif estContrast < 0
-                estContrast = 0.001;
+    switch usePowerMate
+        case 'Yes'
+            [~, startAngle] = PsychPowerMate('Get', powermate);
+            while 1 % start inf loop
+                % Query PowerMate button state and rotation angle in "clicks"
+                [pmButton, angle] = PsychPowerMate('Get', powermate);
+                % 1st button is the "or" of the 1st mouse button and the actual PowerMate button
+                if startAngle ~= angle
+
+                    % Convert turn of dial first to degrees and then to contrast:
+                    %             angles = (angle * 3.8298)/360;
+                    angles = ((startAngle-angle)*3.8298);
+                    changeContrast = angles/360;
+                    estContrast = estContrast - changeContrast; % update the contrast relative to last dial position
+                    % Make sure we stay in range
+
+                    if estContrast > 1
+                        estContrast = 1;
+                    elseif estContrast < 0
+                        estContrast = 0.001;
+                    end
+                    if p.trialEvents(n,1) == 1 || p.trialEvents(n,1) == 3
+                        target = Screen('MakeTexture', window, squeeze(centerTarget(n,:,:))* (estContrast*p.grey) + p.grey);
+                        Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
+                    elseif p.trialEvents(n,1) == 2 || p.trialEvents(n,1) == 4
+                        target = Screen('MakeTexture', window, squeeze(surroundTarget(n,:,:))* (estContrast*p.grey) + p.grey);
+                        Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
+                        Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))')
+                    end
+                    Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
+                    Screen('Flip', window);
+
+                    startAngle = angle;
+                end
+                if pmButton == 1;
+                    data.estimatedContrast(n) = estContrast;
+                    if p.trialEvents(n,1) == 1 || p.trialEvents(n,1) == 3
+                        data.differenceContrast(n) = p.trialEvents(n,2) - data.estimatedContrast(n);
+                    else
+                        data.differenceContrast(n) = p.trialEvents(n,3) - data.estimatedContrast(n);
+                    end
+                    data.responseTime(n) = (GetSecs - startTrial);
+                    pmButton = 0;
+                    break;
+                end
             end
-            if p.trialEvents(n,1) == 1 || p.trialEvents(n,1) == 3
-                target = Screen('MakeTexture', window, squeeze(centerTarget(n,:,:))* (estContrast*p.grey) + p.grey);
-                Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
-            elseif p.trialEvents(n,1) == 2 || p.trialEvents(n,1) == 4
-                target = Screen('MakeTexture', window, squeeze(surroundTarget(n,:,:))* (estContrast*p.grey) + p.grey);
-                Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
-                Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))')
-            end
-            Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
-            Screen('Flip', window);
-            
-            startAngle = angle;
-        end
-        if pmButton == 1;
-            data.estimatedContrast(n) = estContrast;
-            if p.trialEvents(n,1) == 1 || p.trialEvents(n,1) == 3
-                data.differenceContrast(n) = p.trialEvents(n,2) - data.estimatedContrast(n);
-            else
-                data.differenceContrast(n) = p.trialEvents(n,3) - data.estimatedContrast(n);
-            end
-            data.responseTime(n) = (GetSecs - startTrial);
-            pmButton = 0;
-            break;
-        end
-        % check if esc button has been pressed
-        [keyIsDown, keyCode] = PsychHID('KbQueueCheck', deviceNumber); %check response
-        key = find(keyCode);
-        if key == KbName('ESCAPE') % windows = 'esc', mac = 'ESCAPE' If user presses ESCAPE, exit the program.
-            Screen('LoadNormalizedGammaTable', window, OriginalCLUT);
-            Screen('CloseAll');
-            ListenChar(1); % % Go back to unsuppressed mode
-            FlushEvents('keyDown', deviceNumber);
-            error('User exited program.');
-        end
-        
+                % check if esc button has been pressed
+                [keyIsDown, keyCode] = PsychHID('KbQueueCheck', deviceNumber); %check response
+                key = find(keyCode);
+                if key == KbName('ESCAPE') % windows = 'esc', mac = 'ESCAPE' If user presses ESCAPE, exit the program.
+                    Screen('LoadNormalizedGammaTable', window, OriginalCLUT);
+                    Screen('CloseAll');
+                    ListenChar(1); % % Go back to unsuppressed mode
+                    FlushEvents('keyDown', deviceNumber);
+                    error('User exited program.');
+                end
+            case 'No'
+                %Clicks / scroll
+                
+                % check if esc button has been pressed
+                [keyIsDown, keyCode] = PsychHID('KbQueueCheck', deviceNumber); %check response
+                key = find(keyCode);
+                if key == KbName('ESCAPE') % windows = 'esc', mac = 'ESCAPE' If user presses ESCAPE, exit the program.
+                    Screen('LoadNormalizedGammaTable', window, OriginalCLUT);
+                    Screen('CloseAll');
+                    ListenChar(1); % % Go back to unsuppressed mode
+                    FlushEvents('keyDown', deviceNumber);
+                    error('User exited program.');
+                end
+            otherwise
+                error('Option not recognized.')
     end
-    
+
+ 
     % Present center fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation]);
     Screen('Flip', window);
