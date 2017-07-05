@@ -66,8 +66,8 @@ end
 cd(expDir);
 
 %% SCREEN PARAMETERS
-Screens = Screen('Screens'); % look at available screens
-p.screenWidthPixels = Screen('Rect', Screens(1));
+screens = Screen('Screens'); % look at available screens
+p.screenWidthPixels = Screen('Rect', screens(1));
 screenWidth = 36; % 29 cm macbook air, 40 cm trinitron crt, 60 cm Qnix screen
 viewDistance = 68; % in cm, ideal distance: 1 cm equals 1 visual degree
 visAngle = (2*atan2(screenWidth/2, viewDistance))*(180/pi); % Visual angle of the whole screen
@@ -82,7 +82,7 @@ t.startTime = 2; % (s)
 t.responseTime = []; % (s)
 t.flickerTime = 0.2; % (s)
 t.flicker = 0.025; % (s)
-t.cueDur = 0.1; % (s)
+t.cueDur = 0.5; % (s)
 
 %% SOUND SETUP
 InitializePsychSound(1); % 1 for precise timing
@@ -99,7 +99,6 @@ for iTone = 1:numel(cueFreqs)
     cueTones(iTone,:) = applyEnvelope(tone, Fs);
 end
 
-% playSound(pahandle, cueTones(1)*soundAmp)
 %% GRATING PARAMETERS
 p.stimConfigurations = 4; % 1 = simultaneous, 2 = sequentially - center first, 3 = sequentially - surround first, 4 = ?
 p.numContrasts = 1;
@@ -195,7 +194,7 @@ for n = 1:p.numTrials
 end
 
 %% WINDOW SETUP
-[window,rect] = Screen('OpenWindow', Screens(2), p.grey);
+[window,rect] = Screen('OpenWindow', screens(2), p.grey);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
 % load('MyGammaTable.mat');
 % Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
@@ -234,8 +233,14 @@ welcomeText = ['Welcome!' '\n' '\n'...
     ' ' '\n' '\n' ...
     'Be sure to always maintain steady fixation on the green dot! ' '\n' '\n' '\n' ...
     'Click the dial to continue.' '\n' '\n' ];
+
 DrawFormattedText(window, welcomeText, 'center', 'center', 255);
 Screen('Flip', window);
+
+for n=1:size(cueTones,1)
+   playSound(pahandle, cueTones(n,:)*soundAmp);
+   WaitSecs(1);
+end
 
 while 1
     [pmButton, ~] = PsychPowerMate('Get', powermate);
@@ -275,7 +280,8 @@ for n = 1:p.numTrials
     checkerMaskPos = Screen('MakeTexture', window, fullChecker);
     checkerMaskNeg = Screen('MakeTexture', window, fullCheckerNeg);
     
-    playSound(pahandle, cueTones(1)*soundAmp) % play pre-cue
+    playSound(pahandle, cueTones(1,:)*soundAmp); % play pre-cue
+    WaitSecs(1)
 
     if p.trialEvents(n,1) ~= 4 && p.trialEvents(n,4) == 1
         Screen('DrawTexture', window, centerStimulus, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
@@ -336,7 +342,8 @@ for n = 1:p.numTrials
 
     end
 
-    playSound(pahandle, cueTones(1)*soundAmp) % play post-cue
+    playSound(pahandle, cueTones(2,:)*soundAmp); % play post-cue
+    WaitSecs(1)
     
     % retention interval
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
