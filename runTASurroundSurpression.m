@@ -19,7 +19,7 @@ KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
 p.subject = '101';
-p.repetitions = 4; % has to be a multiple of 2 unique repetitions per run
+p.repetitions = 2; % has to be a multiple of 2 unique repetitions per run
 usePowerMate = 'Yes';
 
 switch usePowerMate
@@ -81,7 +81,7 @@ p.pixPerDeg = round(p.screenWidthPixels(3)/visAngle); % pixels per degree visual
 p.grey = 128;
 
 %% TIMING PARAMETERS
-t.stimDur = 1; % (s)
+t.stimDur = 18/60; % 15/60, 16/60, 18/60 (s)
 t.retention = 0.8; % Different retention intervalst.iti = 0.3;
 t.iti = 0.3; % (s)
 t.startTime = 2; % (s)
@@ -110,10 +110,11 @@ end
 
 
 %% GRATING PARAMETERS
-p.stimConfigurations = 4; % 1 = simultaneous, 2 = sequentially - center first, 3 = sequentially - surround first, 4 = ?
+p.stimConfigurations = [1 2]; % 1= colinear, 2 = orthogonal
 p.numContrasts = 1;
-p.testContrasts = 10.^linspace(log10(0.1),log10(0.75),p.numContrasts);
-p.surroundContrast = p.testContrasts; % same possible surround contrasts as center
+p.testContrasts1 = 10.^linspace(log10(0.1),log10(0.75),p.numContrasts);
+p.testContrasts2 = p.testContrasts1;
+p.surroundContrast = 0.75; 
 
 %% TRIAL EVENTS
 % create matrix with all unique trial events based on number of repetitions
@@ -122,46 +123,42 @@ p.surroundContrast = p.testContrasts; % same possible surround contrasts as cent
 % 3 = surround contrast
 % 4 = orientation gratings
 
-
-[F1, F2, F3] = BalanceFactors(p.repetitions, 0, 1:p.stimConfigurations/2, p.testContrasts, p.surroundContrast);
+[F1, F2, F3, F4] = BalanceFactors(p.repetitions, 0, p.stimConfigurations, p.testContrasts1, p.testContrasts2, p.surroundContrast);
 % fourth column in TrialEvents is order of appearance for surround or center
 order = repmat(1:2, [p.numContrasts*(p.numContrasts*p.repetitions), 1]);
 orderBase = repmat(1:2, [(p.numContrasts*p.repetitions), 1]);
 baselineConditions = repmat(3:4, [p.numContrasts*p.repetitions, 1]);
-contrasts = repmat([p.testContrasts' p.surroundContrast'], [p.repetitions 1]);
-p.trialEvents = [F1, F2, F3];
-p.trialEvents = [p.trialEvents order(:); [baselineConditions(:) [[contrasts(:,1) zeros(p.numContrasts*p.repetitions,1)]; ...
-    [zeros(p.numContrasts*p.repetitions,1) contrasts(:,2)]] orderBase(:) ]];
+contrasts = repmat([p.testContrasts1' p.testContrasts2' p.surroundContrast'], [p.repetitions 1]);
+p.trialEvents = [F1, F2, F3, F4];
+p.trialEvents = [p.trialEvents order(:);...
+    [baselineConditions(:) [[contrasts(:,1) zeros(p.numContrasts*p.repetitions,1)]; ...
+    [zeros(p.numContrasts*p.repetitions,1) contrasts(:,2)]] orderBase(:) ]]; %
+
 % every trial should be a random orientation
 p.numTrials = size(p.trialEvents,1); % multiple of locations and possible targets
-whichOrientation =  randsample(1:180, p.numTrials, true);
-p.trialEvents(:,5) = whichOrientation';
+whichOrientation =  [randsample(1:180, p.numTrials, true); randsample(1:180, p.numTrials, true); randsample(1:180, p.numTrials, true)];
+p.trialEvents(:, end:end+2) = whichOrientation';
 
 % Assign pre,post cues 
-cueValidity = 1; % probability of cue validity
+cueValidity = 0.75; % probability of cue validity
 p.numValidTrials = cueValidity * p.numTrials; p.numInvalidTrials = p.numTrials - p.numValidTrials; % distribution of valid and invalid trials
 valids = ones(p.numValidTrials, 1); % all ones, representing valid cues for the trial
-invalids = 2*ones(p.numInvalidTrials, 1); % all twos, representing invalid cues for the trial
+invalids = 2 * ones(p.numInvalidTrials, 1); % all twos, representing invalid cues for the trial
 whichCueValidity = [valids;invalids]; % combine the valid and invalid vectors
-p.trialEvents(:,6) = whichCueValidity;
+p.trialEvents(:,end+1) = whichCueValidity;
 
-% possibleCues = [1 1 2 2 1 2 2 1];
-% possibleCues = unique(nchoosek(possibleCues,2), 'rows');
-
-possibleValids = [1 1; 2 2];
-possibleValids = repmat(possibleValids, p.numValidTrials/size(possibleValids,1),1);
-possibleInvalids = [1 2; 2 1];
-possibleInvalids = repmat(possibleInvalids, p.numInvalidTrials/size(possibleInvalids,1),1);
-trialCues = [possibleValids; possibleInvalids];
-
-p.trialEvents(:,7:8) = trialCues;
-% p.trialEvents = Shuffle(p.trialEvents); % [stimConfiguration, testContrast, surroundContrast, stimConfiguration, orientation, cueValidity, preCue, postCue]
+possibleCues = [1 2 2 1];
+possibleCues = unique(nchoosek(possibleCues, 2), 'rows');
+% trialCues = ;
+% 
+% p.trialEvents(:,7:8) = trialCues;
+% p.trialEvents = Shuffle(p.trialEvents); % [probeTarget, testContrast, surroundContrast, displayOrder, orientation, cueValidity, preCue, postCue]
 
 % size parameters
 p.centerSize = round(1 * p.pixPerDeg);
 p.surroundSize = p.centerSize * 3;
 p.gapSize = round(0.08 * p.pixPerDeg);
-p.outerFixation = round(0.05*p.pixPerDeg);
+p.outerFixation = round(0.05 * p.pixPerDeg);
 p.innerFixation = p.outerFixation/1.5;
 
 % Define parameters for the stimulus
@@ -172,10 +169,8 @@ p.orientation = 0;
 p.phase = randsample(1:180,p.numTrials*4, true);
 p.phase = reshape(p.phase, [p.numTrials 4]);
 p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
-p.orientationChecker = [0 90];
-p.phaseChecker = [0 180];
-
-
+% p.orientationChecker = [0 90]; % orientations of the checkerboard
+% p.phaseChecker = [0 180]; % phases of the checkerboard
 
 %% CREATE STIMULI
 % make mask to create circle for the center grating
@@ -184,31 +179,31 @@ eccen = sqrt((x).^2+(y).^2); 	% calculate eccentricity of each point in grid rel
 centerGaussian = zeros(p.centerSize); centerGaussian(eccen <= (p.centerSize/2)) = 1;
 % Gaussian = conv2(Gaussian, fspecial('gaussian', p.pixPerDeg, p.pixPerDeg), 'same');
 
+% Make transparency mask for aplha blending the two images
+transparencyMask = zeros(p.centerSize); transparencyMask(eccen >= ((p.centerSize)/2)) = 255;
+
 % make mask to create circle for the surround grating
 [x,y] = meshgrid((-p.surroundSize/2):(p.surroundSize/2)-1, (-p.surroundSize/2):(p.surroundSize/2)-1);
 eccen = sqrt((x).^2+(y).^2); 	% calculate eccentricity of each point in grid relative to center of 2D image
 surroundGaussian = zeros(p.surroundSize); surroundGaussian(eccen <= (p.surroundSize/2)) = 1;
 
-% Make transparency mask for aplha blending the two images
-transparencyMask = zeros(p.surroundSize); transparencyMask(eccen >= ((p.centerSize)/2)) = 255;
-
 % make unique grating for every trial
 [Xc,Yc] = meshgrid(0:(p.centerSize-1), 0:(p.centerSize-1));
 [Xs,Ys] = meshgrid(0:(p.surroundSize-1), 0:(p.surroundSize-1));
 
-% Make checkerboard
-checker1 = square( p.freqSurround*2*pi/p.surroundSize * ( Xs.*sin(p.orientationChecker(1)*(pi/180)) + Ys.*cos(p.orientationChecker(1)*(pi/180)) ) - p.phaseChecker(1) );
-checker2 = square( p.freqSurround*2*pi/p.surroundSize * ( Xs.*sin(p.orientationChecker(2)*(pi/180)) + Ys.*cos(p.orientationChecker(2)*(pi/180)) ) - p.phaseChecker(2) );
-fullChecker = (checker1 .* checker2) .* surroundGaussian;
-fullCheckerNeg = fullChecker*-1;
-fullChecker = fullChecker * (p.grey-1) + p.grey;
-fullCheckerNeg = fullCheckerNeg * (p.grey-1) + p.grey;
+% % Make checkerboard
+% checker1 = square( p.freqSurround*2*pi/p.surroundSize * ( Xs.*sin(p.orientationChecker(1)*(pi/180)) + Ys.*cos(p.orientationChecker(1)*(pi/180)) ) - p.phaseChecker(1) );
+% checker2 = square( p.freqSurround*2*pi/p.surroundSize * ( Xs.*sin(p.orientationChecker(2)*(pi/180)) + Ys.*cos(p.orientationChecker(2)*(pi/180)) ) - p.phaseChecker(2) );
+% fullChecker = (checker1 .* checker2) .* surroundGaussian;
+% fullCheckerNeg = fullChecker*-1;
+% fullChecker = fullChecker * (p.grey-1) + p.grey;
+% fullCheckerNeg = fullCheckerNeg * (p.grey-1) + p.grey;
 
 % Make actual gratings
 centerGrating = NaN(p.numTrials*2, p.centerSize, p.centerSize);
 surroundGrating = NaN(p.numTrials*2, p.surroundSize, p.surroundSize);
 centerTarget = NaN(p.numTrials*2, p.centerSize, p.centerSize);
-surroundTarget = NaN(p.numTrials*2, p.surroundSize, p.surroundSize);
+% surroundTarget = NaN(p.numTrials*2, p.surroundSize, p.surroundSize);
 
 for n = 1:p.numTrials
     center = (sin(p.freq*2*pi/p.centerSize*(Xc.*sin(p.orientation*(pi/180))+Yc.*cos(p.orientation*(pi/180)))-p.phase(n,1)));
@@ -220,8 +215,8 @@ for n = 1:p.numTrials
     targetCenter = (sin(p.freq*2*pi/p.centerSize*(Xc.*sin(p.orientation*(pi/180))+Yc.*cos(p.orientation*(pi/180)))-p.phase(n,3)));
     centerTarget(n,:,:) = (targetCenter .* centerGaussian);
     
-    targetSurround = (sin(p.freqSurround*2*pi/p.surroundSize*(Xs.*sin(p.orientation*(pi/180))+Ys.*cos(p.orientation*(pi/180)))-p.phase(n,4)));
-    surroundTarget(n,:,:) = (targetSurround .* surroundGaussian);
+%     targetSurround = (sin(p.freqSurround*2*pi/p.surroundSize*(Xs.*sin(p.orientation*(pi/180))+Ys.*cos(p.orientation*(pi/180)))-p.phase(n,4)));
+%     surroundTarget(n,:,:) = (targetSurround .* surroundGaussian);
 end
 
 %% WINDOW SETUP
@@ -275,7 +270,7 @@ end
 
 while 1
     [pmButton, ~] = PsychPowerMate('Get', powermate);
-    if pmButton == 1;
+    if pmButton == 1
         break;
     end
 end
@@ -302,97 +297,103 @@ data.responseTime = NaN(p.numTrials, 1);
 
 for n = 1:p.numTrials
     
-    centerStimulus = Screen('MakeTexture', window, squeeze( centerGrating(n,:,:)) * (p.trialEvents(n,2) * p.grey ) + p.grey);
+    surroundStimulus = Screen('MakeTexture', window, squeeze( surroundGrating(n,:,:)) * (p.trialEvents(n,2) * p.grey ) + p.grey);
     
-    surroundText(:,:,1) = squeeze( surroundGrating(n,:,:)) * ( p.trialEvents(n,3) * p.grey ) + p.grey;
-    surroundText(:,:,2) = transparencyMask;
-    surroundStimulus = Screen('MakeTexture', window, surroundText);
+    centerText(:,:,1) = squeeze( centerGrating(n,:,:)) * ( p.trialEvents(n,3) * p.grey ) + p.grey;
+    centerText(:,:,2) = transparencyMask;
+    centerStimulus = Screen('MakeTexture', window, centerText);
     
-    checkerMaskPos = Screen('MakeTexture', window, fullChecker);
-    checkerMaskNeg = Screen('MakeTexture', window, fullCheckerNeg);
+%     checkerMaskPos = Screen('MakeTexture', window, fullChecker);
+%     checkerMaskNeg = Screen('MakeTexture', window, fullCheckerNeg);
     
-    playSound(pahandle, cueTones(p.trialEvents(n,6),:)*soundAmp); % play pre-cue
-
-    if p.trialEvents(n,1) ~= 4 && p.trialEvents(n,4) == 1
-        Screen('DrawTexture', window, centerStimulus, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
-    end
-    
-    if (p.trialEvents(n,1) ~= 3 && p.trialEvents(n,4) == 2) || (p.trialEvents(n,1) == 2 && p.trialEvents(n,4) == 2)
+    if p.trialEvents(n,1) ~= 1 
+        % Draw surroundStimulus
         Screen('DrawTexture', window, surroundStimulus, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
     end
     
+    % Play pre-cue
+    playSound(pahandle, cueTones(p.trialEvents(n,end),:)*soundAmp); 
+
+    % Draw centerStimulus 1
+    Screen('DrawTexture', window, centerStimulus, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
+
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     Screen('Flip', window);
     WaitSecs(t.stimDur);
        
-    for f = 1:t.flickerTime/(t.flicker*2)
-            
-        Screen('DrawTexture', window, checkerMaskPos, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)));
-        Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
-        Screen('Flip', window);
-        WaitSecs(t.flicker);
+%     for f = 1:t.flickerTime/(t.flicker*2) % display checkerboard
+%             
+%         Screen('DrawTexture', window, checkerMaskPos, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)));
+%         Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
+%         Screen('Flip', window);
+%         WaitSecs(t.flicker);
+% 
+%         Screen('DrawTexture', window, checkerMaskNeg, [],CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)));
+%         Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
+%         Screen('Flip', window);
+%         WaitSecs(t.flicker);
+% 
+%     end
+    
+    % Draw surroundStimulus & Retention interval 
 
-        Screen('DrawTexture', window, checkerMaskNeg, [],CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)));
-        Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
-        Screen('Flip', window);
-        WaitSecs(t.flicker);
-
+    if p.trialEvents(n,1) ~= 1
+    Screen('DrawTexture', window, surroundStimulus, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
+    Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
     end
     
-    % Retention interval
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     Screen('Flip', window);
     WaitSecs(t.retention);
-    
-    % Time to show stimulus in vwm condition    
-    if p.trialEvents(n,1) ~= 4 && p.trialEvents(n,4) == 2
-        Screen('DrawTexture', window, centerStimulus, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1),patch(2)), p.trialEvents(n,5))
+   
+    if p.trialEvents(n,1) ~= 1
+   % Draw surroundStimulus
+    Screen('DrawTexture', window, surroundStimulus, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
+    Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
     end
     
-    if (p.trialEvents(n,1) ~= 3 && p.trialEvents(n,4) == 1) || (p.trialEvents(n,1) == 2 && p.trialEvents(n,4) == 1)
-        Screen('DrawTexture', window, surroundStimulus, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
-        Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
-    end
+    % Draw centerStimulus 2   
+    Screen('DrawTexture', window, centerStimulus, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1),patch(2)), p.trialEvents(n,5))
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])    
+    
     Screen('Flip', window);
     WaitSecs(t.stimDur);
     
-    for f = 1: t.flickerTime/(t.flicker*2)
-            
-        Screen('DrawTexture', window, checkerMaskPos, [],CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)));
-        Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
-        Screen('Flip', window);
-        WaitSecs(t.flicker);
-
-        Screen('DrawTexture', window, checkerMaskNeg, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)));
-        Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
-        Screen('Flip', window);
-        WaitSecs(t.flicker);
-
+%     for f = 1: t.flickerTime/(t.flicker*2) % display checkerboard
+%             
+%         Screen('DrawTexture', window, checkerMaskPos, [],CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)));
+%         Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
+%         Screen('Flip', window);
+%         WaitSecs(t.flicker);
+% 
+%         Screen('DrawTexture', window, checkerMaskNeg, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)));
+%         Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
+%         Screen('Flip', window);
+%         WaitSecs(t.flicker);
+% 
+%     end
+    
+    % Play post-cue
+    playSound(pahandle, cueTones(p.trialEvents(n,end),:)*soundAmp); 
+    
+    % Draw surroundStimulus & Retention interval
+    if p.trialEvents(n,1) ~= 1
+    Screen('DrawTexture', window, surroundStimulus, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
+    Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
     end
 
-    playSound(pahandle, cueTones(p.trialEvents(n,6),:)*soundAmp); % play post-cue
-    
-    % retention interval
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     Screen('Flip', window);
     WaitSecs(t.retention);       
-    
     
     % Set up button press
     PsychHID('KbQueueStart', deviceNumber);
     PsychHID('KbQueueFlush');
        
-    % Show center or surround Grating and allow user to change contrast
-    if p.trialEvents(n,1) == 1 || p.trialEvents(n,1) == 3
-        target = Screen('MakeTexture', window, squeeze(centerTarget(n,:,:))* (p.probeContrast(n)*p.grey) + p.grey);
-        Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
-    elseif p.trialEvents(n,1) == 2 || p.trialEvents(n,1) == 4
-        target = Screen('MakeTexture', window, squeeze(surroundTarget(n,:,:))* (p.probeContrast(n)*p.grey) + p.grey);
-        Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
-        Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))')
-    end
+    % Report: show center Grating and allow user to change contrast
+    target = Screen('MakeTexture', window, squeeze(centerTarget(n,:,:))* (p.probeContrast(n)*p.grey) + p.grey);
+    Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
     
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     Screen('Flip', window);
@@ -421,14 +422,11 @@ for n = 1:p.numTrials
                     elseif estContrast < 0
                         estContrast = 0.001;
                     end
-                    if p.trialEvents(n,1) == 1 || p.trialEvents(n,1) == 3
-                        target = Screen('MakeTexture', window, squeeze(centerTarget(n,:,:))* (estContrast*p.grey) + p.grey);
-                        Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
-                    elseif p.trialEvents(n,1) == 2 || p.trialEvents(n,1) == 4
-                        target = Screen('MakeTexture', window, squeeze(surroundTarget(n,:,:))* (estContrast*p.grey) + p.grey);
-                        Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
-                        Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))')
-                    end
+                    
+                    % Show center Grating
+                    target = Screen('MakeTexture', window, squeeze(centerTarget(n,:,:))* (estContrast*p.grey) + p.grey);
+                    Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
+
                     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
                     Screen('Flip', window);
 
@@ -516,10 +514,10 @@ Screen('LoadNormalizedGammaTable', window, OriginalCLUT);
 Screen('CloseAll')
 
 %% SAVE OUT THE DATA FILE
-cd(dataDir);
-theData(runNumber).t = t;
-theData(runNumber).p = p;
-theData(runNumber).data = data;
-eval(['save vTA_surrSuppression_', p.Subject, '.mat theData'])
-
-cd(expDir);
+% cd(dataDir);
+% theData(runNumber).t = t;
+% theData(runNumber).p = p;
+% theData(runNumber).data = data;
+% eval(['save vTA_surrSuppression_', p.subject, '.mat theData'])
+% 
+% cd(expDir);
