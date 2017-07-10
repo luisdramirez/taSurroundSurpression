@@ -20,7 +20,7 @@ Screen('Preference', 'SkipSyncTests', 0);
 
 p.subject = '101';
 p.repetitions = 2; % has to be a multiple of 2 unique repetitions per run
-usePowerMate = 'Yes';
+usePowerMate = 'No';
 
 switch usePowerMate
     case 'Yes'
@@ -40,10 +40,11 @@ end
 % Check which devicenumber the keyboard is assigned to
 deviceNumber = 0;
 [keyBoardIndices, productNames] = GetKeyboardIndices;
-deviceString = 'Corsair Corsair K95W Gaming Keyboard';
+% deviceString = 'Corsair Corsair K95W Gaming Keyboard';
 % deviceString = 'Apple Inc. Apple Keyboard';
 % deviceString = 'Apple Keyboard';
 % deviceString = 'CHICONY USB Keyboard';
+deviceString = 'Apple Internal Keyboard / Trackpad';
 for i = 1:length(productNames)
     if strcmp(productNames{i}, deviceString)
         deviceNumber = keyBoardIndices(i);
