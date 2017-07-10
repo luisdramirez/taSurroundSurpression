@@ -19,7 +19,7 @@ KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
 p.subject = '101';
-p.repetitions = 2; % has to be a multiple of 2 unique repetitions per run
+p.numBlocks = 2; % has to be a multiple of 2 unique repetitions per run
 usePowerMate = 'Yes';
 
 switch usePowerMate
@@ -80,18 +80,6 @@ visAngle = (2*atan2(screenWidth/2, viewDistance))*(180/pi); % Visual angle of th
 p.pixPerDeg = round(p.screenWidthPixels(3)/visAngle); % pixels per degree visual angle
 p.grey = 128;
 
-%% TIMING PARAMETERS
-t.stimDur = 8/60; % nFramesPerTarget/refrate (s)
-t.targetSOA = 18/60; %15/60, 16/60, 18/60 (s)
-t.retention = 0.8; % (s) 
-t.iti = 1; % (s)
-t.startTime = 2; % (s)
-t.responseTime = []; % (s)
-t.flickerTime = 0.2; % (s)
-t.flicker = 0.025; % (s)
-t.cueDur = 0.125; % (s)
-t.cueTargetSOA = 1; % (s)
-
 %% SOUND SETUP
 InitializePsychSound(1); % 1 for precise timing
 
@@ -100,6 +88,7 @@ Fs = 44100;
 soundAmp = 1;
 reqlatencyclass = 2; % level 2 means take full control over the audio device, even if this causes other sound devices to fail or shutdown
 pahandle = PsychPortAudio('Open', [], [], reqlatencyclass, Fs, 1); % 1= single-channel
+t.cueDur = 0.125; % (s)
 
 cueFreqs = [1046.5 440]; % [high C = target 1, lower A = target 2]
 for iTone = 1:numel(cueFreqs)
@@ -112,15 +101,15 @@ end
 
 
 %% GRATING PARAMETERS
-p.stimConfigurations = [1 2 3 4]; 
+p.stimConfigurations = [1 2 3 4]; % [5 6] are baseline (no surround)
 p.stimConfigurationsNames = {'colinearT1cued' 'colinearT2cued' 'orthogonalT1cued' 'orthogonalT2cued' 'baselineT1cued' 'baseline T2cued'};
 
 % contrast parameters
-p.numContrasts = 1;
+p.numContrasts = 3;
 p.minContrast = 0.1;
 p.maxContrast = 0.75;
-p.testContrasts1 = 10.^linspace(log10(p.minContrast),log10(p.maxContrast),p.numContrasts);
-p.testContrasts2 = p.testContrasts1;
+p.t1Contrasts = 10.^linspace(log10(p.minContrast),log10(p.maxContrast),p.numContrasts);
+p.t2Contrasts = p.t1Contrasts;
 p.surroundContrast = 0.75; 
 
 % size parameters
@@ -138,21 +127,22 @@ p.innerFixation = p.outerFixation/1.5;
 % 3 = surround contrast
 % 4 = orientation gratings
 
-[F1, F2, F3] = BalanceFactors(p.repetitions, 0, p.stimConfigurations, p.testContrasts1, p.testContrasts2);
+[F1, F2, F3] = BalanceFactors(p.numBlocks, 0, p.stimConfigurations, p.t1Contrasts, p.t2Contrasts);
 % fourth column in TrialEvents is order of appearance for surround or center
-% order = repmat(1:length(p.stimConfigurations), [p.numContrasts*(p.numContrasts*p.repetitions), 1]);
-% orderBase = repmat(1:length(p.stimConfigurations), [(p.numContrasts*p.repetitions), 1]);
-baselineConditions = repmat(5:6, [p.numContrasts*p.repetitions, 1]);
-contrasts = repmat([p.testContrasts1' p.testContrasts2'], [p.repetitions 1]);
+% order = repmat(1:length(p.stimConfigurations), [p.numContrasts*(p.numContrasts*p.numBlocks), 1]);
+% orderBase = repmat(1:length(p.stimConfigurations), [(p.numContrasts*p.numBlocks), 1]);
+baselineConditions = repmat(5:6, [p.numContrasts*p.numBlocks, 1]);
+contrasts = repmat([p.t1Contrasts' p.t2Contrasts'], [p.numBlocks 1]);
 p.trialEvents = [F1, F2, F3];
 p.trialEvents = [p.trialEvents;...
-    [baselineConditions(:) [[contrasts(:,1) zeros(p.numContrasts*p.repetitions,1)]; ...
-    [zeros(p.numContrasts*p.repetitions,1) contrasts(:,2)]]  ]]; %
+    [baselineConditions(:) [[contrasts(:,1) Shuffle(contrasts(:,2))]; ... % zeros(p.numContrasts*p.numBlocks,1)
+    [contrasts(:,1) Shuffle(contrasts(:,2))]]  ]]; %
 
-p.numTrials = size(p.trialEvents,1); 
+p.numTrials = size(p.trialEvents,1);
+p.numTrialsPerBlock = p.numTrials/p.numBlocks;
 
-% every trial should be a random orientation
-p.targetsOrientation = randsample(1:180, p.numTrials, true);
+% every trial should be a random orientation; 
+p.targetsOrientation = randsample(1:180, p.numTrials, true); % each target has the same orientation
 
 % surround orientation dependent on colinear/orthogonal condition
 p.surroundOrientation = nan(size(p.targetsOrientation));
@@ -179,7 +169,7 @@ trialCues = repmat(trialCuesBase, p.numTrials/length(trialCuesBase),1);
 p.trialEvents(:,end+1) = trialCues;
 
 p.trialEvents % [stimConfiguration, t1Contrast, t2Contrast, targOrientation, surrOrientation, cueValidity]
-% p.trialEvents = Shuffle(p.trialEvents); 
+p.trialEvents = Shuffle(p.trialEvents); 
 
 % Define parameters for the stimulus
 freq = 2;
@@ -191,6 +181,49 @@ p.phase = reshape(p.phase, [p.numTrials 4]);
 p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
 % p.orientationChecker = [0 90]; % orientations of the checkerboard
 % p.phaseChecker = [0 180]; % phases of the checkerboard
+
+%% TIMING PARAMETERS
+t.targetDur = 8/60; % nFramesPerTarget/refrate (s)
+t.targetSOA = 18/60; %15/60, 16/60, 18/60 (s)
+t.retention = 0.8; % (s)
+t.feedbackDur = 0.3; % (s)
+t.iti = 1; % (s)
+t.startTime = 2; % (s)
+t.responseTime = []; % (s)
+t.cueTargetSOA = 1; % (s)
+t.cueLeadTime = 1; %(s)
+t.trialDur = t.cueDur + t.targetSOA + t.cueTargetSOA*2 + t.targetDur*2 + t.retention; % duration of the longest trial
+t.trialDur = t.trialDur + t.iti;
+
+jit = 0:0.2:1;
+trialJit = Shuffle(repmat(jit,1, ceil(p.numTrials/numel(jit))));
+t.trialJit = trialJit(1:p.numTrials);
+
+t.runDur = t.trialDur*p.numTrials + sum(t.trialJit);
+trialStartTimes = (0:t.trialDur:t.trialDur*p.numTrials-t.trialDur) + cumsum([0 t.trialJit(1:end-1)]);
+
+targetStartTimes = [];
+cueStartTimes = [];
+
+% calculate theoretical timing of events
+for n = 1:p.numTrials
+    targetTimes = [0 t.targetSOA];
+    cueTimes = [targetTimes(1)-t.cueTargetSOA targetTimes(2)+t.cueTargetSOA];
+    
+    targetTimes = targetTimes + trialStartTimes(n) + t.trialJit(n);
+    targetStartTimes = [targetStartTimes; targetTimes'];
+    
+    cueTimes = cueTimes + trialStartTimes(n) + t.trialJit(n);
+    cueStartTimes = [cueStartTimes; cueTimes'];
+end
+
+t.targetStartTimes = targetStartTimes;
+t.cueStartTimes = cueStartTimes;
+t.targetEndTimes = targetStartTimes + t.targetDur;
+p.numTargets = numel(targetStartTimes);
+
+% t.flickerTime = 0.2; % (s)
+% t.flicker = 0.025; % (s)
 
 %% CREATE STIMULI
 % make mask to create circle for the center grating
@@ -297,17 +330,11 @@ while 1
     end
 end
 
-Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation]);
-Screen('Flip', window);
-
-startTime = GetSecs;
-WaitSecs(t.startTime);
-
 % Make sure we can press esc to quit the experiment
 startKey = zeros(1,256); startKey(KbName({'ESCAPE'})) = 1;
 PsychHID('KbQueueCreate', deviceNumber, startKey);
 
-Screen('Flip', window);
+
 % Preallocate some variables
 data.estimatedContrast = NaN(p.numTrials, 1);
 data.differenceContrast = NaN(p.numTrials, 1);
@@ -341,11 +368,24 @@ centerMask = Screen('MakeTexture', window, centerTransparencyMask);
 % TRIAL LOOP %
 %------------%
 
-for n = 1:p.numTrials
-   
+nBlock = 1;
+trialTimes = zeros(p.numTrials,6); % [start precue t1 t2 postcue end] 
+expStart = GetSecs;
+
+for nTrial = 1:p.numTrials
+    trialStart = GetSecs;
+    trialTimes(nTrial,1) = trialStart;
+    
+    if nTrial == 1 || nTrial == p.numTrialsPerBlock*(nBlock-1) + 1
+
+        Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation]);
+        Screen('Flip', window);
+        WaitSecs(t.startTime);
+    end
+    
     % Draw surroundStimulus if not baseline condition
-    if p.trialEvents(n,1) ~= 5 || p.trialEvents(n,1) ~= 6  
-        Screen('DrawTexture', window, surroundStimulus(n), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
+    if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6  
+        Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,5))
         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
         %Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize)
     end
@@ -353,9 +393,10 @@ for n = 1:p.numTrials
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     Screen('Flip', window);
+    WaitSecs(t.cueLeadTime);
     
     % Play pre-cue (odd = high tone (T1); even = low tone (T2))
-    if mod(p.trialEvents(n,1),2) ~= 0
+    if mod(p.trialEvents(nTrial,1),2) ~= 0
         playSound(pahandle, cueTones(1,:)*soundAmp);
     else
         playSound(pahandle, cueTones(2,:)*soundAmp);
@@ -365,22 +406,22 @@ for n = 1:p.numTrials
     WaitSecs(t.cueTargetSOA);
     
     % Draw centerStimulus1
-    Screen('DrawTexture', window, centerMask, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,4))
-    Screen('DrawTexture', window, centerStimulus1(n), [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,4))
+    Screen('DrawTexture', window, centerMask, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
+    Screen('DrawTexture', window, centerStimulus1(nTrial), [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
     
     % Draw surroundStimulus if not baseline condition
-    if p.trialEvents(n,1) ~= 5 || p.trialEvents(n,1) ~= 6  
-        Screen('DrawTexture', window, surroundStimulus(n), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
+    if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6  
+        Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,5))
         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
         %Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize)
     end
     
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
-    Screen('Flip', window);
+    trialTimes(nTrial,3) = Screen('Flip', window);
     
     % Stim duration
-    WaitSecs(t.stimDur);
+    WaitSecs(t.targetDur);
        
 %     for f = 1:t.flickerTime/(t.flicker*2) % display checkerboard
 %             
@@ -397,8 +438,8 @@ for n = 1:p.numTrials
 %     end
     
     % Draw surroundStimulus if not baseline condition
-    if p.trialEvents(n,1) ~= 5 || p.trialEvents(n,1) ~= 6 
-        Screen('DrawTexture', window, surroundStimulus(n), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
+    if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6 
+        Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,5))
         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
         %Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize)    
     end
@@ -411,22 +452,22 @@ for n = 1:p.numTrials
     WaitSecs(t.targetSOA);
    
     % Draw centerStimulus2
-    Screen('DrawTexture', window, centerMask, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,4))
-    Screen('DrawTexture', window, centerStimulus2(n), [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,4))
+    Screen('DrawTexture', window, centerMask, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
+    Screen('DrawTexture', window, centerStimulus2(n), [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
     
     % Draw surroundStimulus if not baseline condition
-    if p.trialEvents(n,1) ~= 5 || p.trialEvents(n,1) ~= 6  
-        Screen('DrawTexture', window, surroundStimulus(n), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
+    if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6  
+        Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,5))
         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
         %Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize)
     end
     
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
-    Screen('Flip', window);
+    trialTimes(nTrial,4) = Screen('Flip', window);
     
     % Stim duration
-    WaitSecs(t.stimDur);
+    WaitSecs(t.targetDur);
     
 %     for f = 1: t.flickerTime/(t.flicker*2) % display checkerboard
 %             
@@ -443,8 +484,8 @@ for n = 1:p.numTrials
 %     end
     
     % Draw surroundStimulus if not baseline condition
-    if p.trialEvents(n,1) ~= 5 || p.trialEvents(n,1) ~= 6 
-        Screen('DrawTexture', window, surroundStimulus(n), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
+    if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6 
+        Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,5))
         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
         %Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize)
     end
@@ -457,26 +498,26 @@ for n = 1:p.numTrials
     WaitSecs(t.cueTargetSOA);       
     
     % Play post-cue (odd = high tone (T1); even = low tone (T2))
-    if mod(p.trialEvents(n,1),2) ~= 0 && p.trialEvents(n,6) == 1 %if odd and valid
+    if mod(p.trialEvents(nTrial,1),2) ~= 0 && p.trialEvents(nTrial,6) == 1 %if odd and valid
         playSound(pahandle, cueTones(1,:)*soundAmp);
-    elseif mod(p.trialEvents(n,1),2) ~= 0 && p.trialEvents(n,6) == 2 %if odd and invalid
+    elseif mod(p.trialEvents(nTrial,1),2) ~= 0 && p.trialEvents(nTrial,6) == 2 %if odd and invalid
         playSound(pahandle, cueTones(2,:)*soundAmp);
-    elseif mod(p.trialEvents(n,1),2) == 0 && p.trialEvents(n,6) == 1 %if even and valid
+    elseif mod(p.trialEvents(nTrial,1),2) == 0 && p.trialEvents(nTrial,6) == 1 %if even and valid
         playSound(pahandle, cueTones(2,:)*soundAmp);
-    elseif mod(p.trialEvents(n,1),2) == 0 && p.trialEvents(n,6) == 2 %if even and invalid
+    elseif mod(p.trialEvents(nTrial,1),2) == 0 && p.trialEvents(nTrial,6) == 2 %if even and invalid
         playSound(pahandle, cueTones(1,:)*soundAmp);
     end
     
     % Draw surroundStimulus if not baseline condition
-    if p.trialEvents(n,1) ~= 5 || p.trialEvents(n,1) ~= 6 
-        Screen('DrawTexture', window, surroundStimulus(n), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(n,5))
+    if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6 
+        Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,5))
         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
 %         Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize)
     end
 
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
-    Screen('Flip', window);
+    trialTimes(nTrial,end) = Screen('Flip', window);
     WaitSecs(t.retention);
     
     % Set up button press
@@ -484,8 +525,8 @@ for n = 1:p.numTrials
     PsychHID('KbQueueFlush');
        
     % Report: show center Grating and allow user to change contrast
-    target = Screen('MakeTexture', window, squeeze(centerTarget(n,:,:))* (p.probeContrast(n)*p.grey) + p.grey);
-    Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
+    target = Screen('MakeTexture', window, squeeze(centerTarget(nTrial,:,:))* (p.probeContrast(nTrial)*p.grey) + p.grey);
+    Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
     
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     Screen('Flip', window);
@@ -494,7 +535,7 @@ for n = 1:p.numTrials
     switch usePowerMate
         case 'Yes'
             [~, startAngle] = PsychPowerMate('Get', powermate);
-            estContrast = p.probeContrast(n);
+            estContrast = p.probeContrast(nTrial);
 
             while 1 % start inf loop
                 % Query PowerMate button state and rotation angle in "clicks"
@@ -516,8 +557,8 @@ for n = 1:p.numTrials
                     end
                     
                     % Show center Grating
-                    target = Screen('MakeTexture', window, squeeze(centerTarget(n,:,:))* (estContrast*p.grey) + p.grey);
-                    Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(n,5))
+                    target = Screen('MakeTexture', window, squeeze(centerTarget(nTrial,:,:))* (estContrast*p.grey) + p.grey);
+                    Screen('DrawTexture', window, target, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
 
                     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
                     Screen('Flip', window);
@@ -525,13 +566,13 @@ for n = 1:p.numTrials
                     startAngle = angle;
                 end
                 if pmButton == 1;
-                    data.estimatedContrast(n) = estContrast;
-                    if p.trialEvents(n,1) == 1 || p.trialEvents(n,1) == 3
-                        data.differenceContrast(n) = p.trialEvents(n,2) - data.estimatedContrast(n);
+                    data.estimatedContrast(nTrial) = estContrast;
+                    if p.trialEvents(nTrial,1) == 1 || p.trialEvents(nTrial,1) == 3
+                        data.differenceContrast(nTrial) = p.trialEvents(nTrial,2) - data.estimatedContrast(nTrial);
                     else
-                        data.differenceContrast(n) = p.trialEvents(n,3) - data.estimatedContrast(n);
+                        data.differenceContrast(nTrial) = p.trialEvents(nTrial,3) - data.estimatedContrast(nTrial);
                     end
-                    data.responseTime(n) = (GetSecs - startTrial);
+                    data.responseTime(nTrial) = (GetSecs - startTrial);
                     pmButton = 0;
                     break;
                 end
@@ -563,21 +604,27 @@ for n = 1:p.numTrials
                 error('Option not recognized.')
     end
 
- 
-    % Present center fixation
+    trialEnd = GetSecs;
+    
+    trialTimes(nTrial,end) = trialEnd;
+    
+    % Present center fixation; get ready for next trial
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation]);
     Screen('Flip', window);
+    
     WaitSecs(t.iti);
-    
-    
+ 
     %%% Rest period
-    if n == ceil(p.numTrials/2)
+    if  nTrial == p.numTrialsPerBlock*nBlock
         rest = GetSecs;
         
-        restText = ['Halfway there! You can take a short break now, ' '' '\n' ...
+        restText = ['Block ' num2str(nBlock) ' of ' num2str(p.numBlocks) ' completed! You can take a short break now, ' '' '\n' ...
             'or press the dial to continue' '\n' '\n' ];
         DrawFormattedText(window, restText, 'center', 'center', white);
         Screen('Flip', window);
+        
+        nBlock = nBlock+1; 
+        
         pmButtonBreak = 0;
         
         while 1
@@ -586,19 +633,17 @@ for n = 1:p.numTrials
                 break;
             end
         end
-        Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation]);
-        Screen('Flip', window);
-        WaitSecs(t.iti);
-        t.restTime = (GetSecs-rest)/60;
         
+        t.restTime = (GetSecs-rest)/60;      
     end
+ 
     
 end
 
-t.endTime = (GetSecs-startTime)/60; %Get endtime of the experiment in seconds
+t.endTime = (GetSecs-expStart)/60; %Get endtime of the experiment in seconds
 %Draw some more text to the screen outside of the loop:
 Screen(window,'TextSize',30);
-byeByeText = 'Great work! You have finished this run';
+byeByeText = 'Great work! You have finished this run.';
 DrawFormattedText(window, byeByeText, 'center', 'center', [255 255 255]);
 Screen('Flip', window);
 WaitSecs(2);
