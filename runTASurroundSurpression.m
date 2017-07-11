@@ -191,7 +191,9 @@ p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
 
 % Create triggers for trial events
 % [trialStart preCue T1 T2 postCue trialEnd] 
-
+triggerBase = {'Trial Starts' 'pre-cue' 'T1' 'T2' 'post-cue' 'Trial Ends'};
+triggers = {(1:p.numTrials)' repmat(triggerBase, p.numTrials,1)};
+    
 %% TIMING PARAMETERS
 t.targetDur = 6/60; % nFramesPerTarget/refrate (s) max = 12 
 t.targetSOA = 15/60; %15/60 (250ms), 16/60 (267ms), 18/60 (300ms) (s)
@@ -407,7 +409,7 @@ for nTrial = 1:p.numTrials
        if status ~= 0
            error('Tracker is not recording.') %if not recording send error message
        else
-           status = EyeLink('Message','Trigger: ', triggers(1)); % if yes, send trigger 
+           status = EyeLink('Message',['Trigger: ' num2str(triggers{1}(nTrial)) triggers{2}(1)]); % if yes, send trigger 
            if status == 0
               triggerTimes(nTrial,1) = EyeLink('TrackerTime'); % store time trigger was sent 
            else
@@ -451,7 +453,7 @@ for nTrial = 1:p.numTrials
        if status ~= 0
            error('Tracker is not recording.') %if not recording send error message
        else
-           status = EyeLink('Message','Trigger: ', triggers(2)); % if yes, send trigger 
+           status = EyeLink('Message','Trigger: ', triggers(nTrial,2)); % if yes, send trigger 
            if status == 0
                triggerTimes(nTrial,2) = EyeLink('TrackerTime'); % store time trigger was sent
            else
@@ -488,7 +490,7 @@ for nTrial = 1:p.numTrials
        if status ~= 0
            error('Tracker is not recording.') %if not recording send error message
        else
-           status = EyeLink('Message','Trigger: ', triggers(3)); % if yes, send trigger 
+           status = EyeLink('Message','Trigger: ', triggers(nTrial,3)); % if yes, send trigger 
            if status == 0
                triggerTimes(nTrial,3) = EyeLink('TrackerTime'); % store time trigger was sent
            else
@@ -550,7 +552,7 @@ for nTrial = 1:p.numTrials
        if status ~= 0
            error('Tracker is not recording.') %if not recording send error message
        else
-           status = EyeLink('Message','Trigger: ', triggers(4)); % if yes, send trigger 
+           status = EyeLink('Message','Trigger: ', triggers(nTrial,4)); % if yes, send trigger 
            if status == 0
                triggerTimes(nTrial,4) = EyeLink('TrackerTime'); % store time trigger was sent
            else
@@ -610,7 +612,7 @@ for nTrial = 1:p.numTrials
        if status ~= 0
            error('Tracker is not recording.') %if not recording send error message
        else
-           status = EyeLink('Message','Trigger: ', triggers(5)); % if yes, send trigger 
+           status = EyeLink('Message','Trigger: ', triggers(nTrial,5)); % if yes, send trigger 
            if status == 0
                triggerTimes(nTrial,5) = EyeLink('TrackerTime'); % store time trigger was sent
            else
@@ -726,7 +728,7 @@ for nTrial = 1:p.numTrials
        if status ~= 0
            error('Tracker is not recording.') %if not recording send error message
        else
-           status = EyeLink('Message','Trigger: ', triggers(6)); % if yes, send trigger 
+           status = EyeLink('Message','Trigger: ', triggers(nTrial, 6)); % if yes, send trigger 
            if status == 0
                triggerTimes(nTrial,6) = EyeLink('TrackerTime'); % store time trigger was sent
            else
