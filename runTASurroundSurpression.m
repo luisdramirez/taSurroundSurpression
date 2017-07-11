@@ -6,7 +6,7 @@
 % normalization bandwidth may become narrower when attention is directed
 % towards a stimulus.
 
-% Code written by IB & YW, modified by LDR
+% 
 
 %% PREPARE AND COLLECT INFO
 
@@ -18,14 +18,13 @@ close all
 KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
-p.subject = '101';
-<<<<<<< HEAD
-p.repetitions = 2; % has to be a multiple of 2 unique repetitions per run
-usePowerMate = 'No';
-=======
+% Subject name and run number
+p.subject = 'Pilot';
+p.runNumber = 101;
 p.numBlocks = 2; % has to be a multiple of 2 unique repetitions per run
+
 usePowerMate = 'Yes';
->>>>>>> 91a165fde8072fa6b68bf121be5ec070765c9b85
+useEyeTracker = 'No';
 
 switch usePowerMate
     case 'Yes'
@@ -45,11 +44,13 @@ end
 % Check which devicenumber the keyboard is assigned to
 deviceNumber = 0;
 [keyBoardIndices, productNames] = GetKeyboardIndices;
-% deviceString = 'Corsair Corsair K95W Gaming Keyboard';
+
+deviceString = 'Corsair Corsair K95W Gaming Keyboard';
 % deviceString = 'Apple Inc. Apple Keyboard';
 % deviceString = 'Apple Keyboard';
 % deviceString = 'CHICONY USB Keyboard';
-deviceString = 'Apple Internal Keyboard / Trackpad';
+% deviceString = 'Apple Internal Keyboard / Trackpad';
+
 for i = 1:length(productNames)
     if strcmp(productNames{i}, deviceString)
         deviceNumber = keyBoardIndices(i);
@@ -77,6 +78,7 @@ else
 end
 cd(expDir);
 
+
 %% SCREEN PARAMETERS
 screens = Screen('Screens'); % look at available screens
 p.screenWidthPixels = Screen('Rect', screens(1));
@@ -85,7 +87,6 @@ viewDistance = 68; % in cm, ideal distance: 1 cm equals 1 visual degree
 visAngle = (2*atan2(screenWidth/2, viewDistance))*(180/pi); % Visual angle of the whole screen
 p.pixPerDeg = round(p.screenWidthPixels(3)/visAngle); % pixels per degree visual angle
 p.grey = 128;
-
 %% SOUND SETUP
 InitializePsychSound(1); % 1 for precise timing
 
@@ -111,7 +112,7 @@ p.stimConfigurations = [1 2 3 4]; % [5 6] are baseline (no surround)
 p.stimConfigurationsNames = {'colinearT1cued' 'colinearT2cued' 'orthogonalT1cued' 'orthogonalT2cued' 'baselineT1cued' 'baseline T2cued'};
 
 % contrast parameters
-p.numContrasts = 4; % 4 for piloting
+p.numContrasts = 1; % 4 for piloting
 p.minContrast = 0.1;
 p.maxContrast = 0.75;
 p.t1Contrasts = 10.^linspace(log10(p.minContrast),log10(p.maxContrast),p.numContrasts);
@@ -188,9 +189,12 @@ p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
 % p.orientationChecker = [0 90]; % orientations of the checkerboard
 % p.phaseChecker = [0 180]; % phases of the checkerboard
 
+% Create triggers for trial events
+% [trialStart preCue T1 T2 postCue trialEnd] 
+
 %% TIMING PARAMETERS
-t.targetDur = 8/60; % nFramesPerTarget/refrate (s)
-t.targetSOA = 18/60; %15/60, 16/60, 18/60 (s)
+t.targetDur = 6/60; % nFramesPerTarget/refrate (s) max = 12 
+t.targetSOA = 15/60; %15/60 (250ms), 16/60 (267ms), 18/60 (300ms) (s)
 t.retention = 0.8; % (s)
 t.feedbackDur = 0.3; % (s)
 t.iti = 1; % (s)
@@ -198,8 +202,8 @@ t.startTime = 2; % (s)
 t.responseTime = []; % (s)
 t.cueTargetSOA = 1; % (s)
 t.cueLeadTime = 1; %(s)
-t.trialDur = t.cueDur + t.targetSOA + t.cueTargetSOA*2 + t.targetDur*2 + t.retention; % duration of the longest trial
-t.trialDur = t.trialDur + t.iti;
+t.trialDur = t.cueLeadTime + t.cueDur + t.targetSOA + t.cueTargetSOA*2 + t.targetDur*2 + t.retention; % duration of the longest trial
+t.trialDurLongest = t.trialDur + t.startTime;
 
 jit = 0:0.2:1;
 trialJit = Shuffle(repmat(jit,1, ceil(p.numTrials/numel(jit))));
@@ -299,7 +303,15 @@ patch =  [centerX centerY];
 Screen('TextStyle', window, 1);
 Screen('TextSize', window, 16);
 
+%% EYE TRACKING
+if strcmp(useEyeTracker, 'Yes')
+    p.observer = [p.subject num2str(p.runNumber)];
+    [el edf_filename] = eyeTrackingOn(window, p.observer, rect, p.pixPerDeg);
+end
 
+% [status] = Eyelink('Message', string, trigger) % prints out message
+% [status] = Eyelink('CheckRecording') % 0 if recording, 1 if not recording 
+% [time] = Eyelink('TrackerTime') % time since the tracker application started
 %% START THE EXPERIMENT
 % Draw some text to the screen first outside of the experimental loop:
 
@@ -311,19 +323,20 @@ PsychHID('KbQueueStart', deviceNumber);
 
 welcomeText = ['Welcome!' '\n' '\n'...
     '' '\n' '\n'...
-    'On every trial a center and surrounding stimulus are presented at fixation, which both vary in intensities.' '\n' '\n' ...
-    'Your task is to actively maintain a precise representation of both intensity levels. ' '\n' '\n' ...
-    'On some trials the center and surround will be presented simultaneous, while on other trials' '\n' '\n' ...
-    'they will be presented sequentially' '\n' '\n' ...
-    'After a 2 second delay period you are asked to dial the probe to match the intensity' '\n' '\n' ...
-    'of the probed center or surrounding stimulus you have in memory as closely as possible.' '\n' '\n' ...
-    ' ' '\n' '\n' ...
+    'On every trial two center targets are presented at fixation, varying in intensity.' '\n' '\n' ...
+    'Your task is to actively maintain a precise representation of one of the cued stimuli. ' '\n' '\n' ...
+    'An auditory cue (pre-cue) will indicate whether to attend to the first target (high tone) or the second (low tone).' '\n' '\n' ...
+    'On most trials the center targets will be accompanied by a surround stimulus, while on some the surround stimulus is absent.' '\n' '\n' ...
+    'After the presentation of both targets, there will be an additional auditory cue (post-cue).' '\n' '\n' ...
+    'Dial the probe to match the intensity of the target indicated by the post-cue as closely as possible.' '\n' '\n' ...
     'Be sure to always maintain steady fixation on the green dot! ' '\n' '\n' '\n' ...
     'Click the dial to continue.' '\n' '\n' ];
 
 DrawFormattedText(window, welcomeText, 'center', 'center', 255);
 Screen('Flip', window);
+welcomeStart = GetSecs;
 
+% play tones for participant before experiment starts
 for n=1:size(cueTones,1)
    playSound(pahandle, cueTones(n,:)*soundAmp);
    WaitSecs(1);
@@ -374,18 +387,40 @@ centerMask = Screen('MakeTexture', window, centerTransparencyMask);
 % TRIAL LOOP %
 %------------%
 
+% Eye Tracker Recording ON
+if strcmp(useEyeTracker, 'Yes')
+    eyeTrackingRecord(el, rect, p.pixPerDeg);
+end
+
 nBlock = 1;
-trialTimes = zeros(p.numTrials,6); % [start precue t1 t2 postcue end] 
-expStart = GetSecs;
+trialTimes = zeros(p.numTrials,6); % [startTrial preCueTime t1Time t2Time postCueTime endTrial]
+triggerTimes = nan(size(trialTimes));
+expStart = GetSecs; % baseline experiment start time
+welcomeTime = GetSecs - welcomeStart;
+t.welcomeTime = welcomeTime;
 
 for nTrial = 1:p.numTrials
-    trialStart = GetSecs;
-    trialTimes(nTrial,1) = trialStart;
+    
+    % Trial Start Trigger
+    if strcmp(useEyeTracker, 'Yes')
+       status = EyeLink('CheckRecording'); % check if eyelink is recording
+       if status ~= 0
+           error('Tracker is not recording.') %if not recording send error message
+       else
+           status = EyeLink('Message','Trigger: ', triggers(1)); % if yes, send trigger 
+           if status == 0
+              triggerTimes(nTrial,1) = EyeLink('TrackerTime'); % store time trigger was sent 
+           else
+              error('Message could not be sent.') 
+           end
+       end
+    end
     
     if nTrial == 1 || nTrial == p.numTrialsPerBlock*(nBlock-1) + 1
-
         Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation]);
         Screen('Flip', window);
+        trialStart = GetSecs - expStart;
+        trialTimes(nTrial,1) = trialStart;
         WaitSecs(t.startTime);
     end
     
@@ -399,6 +434,8 @@ for nTrial = 1:p.numTrials
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     Screen('Flip', window);
+    trialStart = GetSecs - expStart;
+    trialTimes(nTrial,1) = trialStart;
     WaitSecs(t.cueLeadTime);
     
     % Play pre-cue (odd = high tone (T1); even = low tone (T2))
@@ -407,6 +444,24 @@ for nTrial = 1:p.numTrials
     else
         playSound(pahandle, cueTones(2,:)*soundAmp);
     end
+    
+    % Pre-cue Trigger
+    if strcmp(useEyeTracker, 'Yes')
+       status = EyeLink('CheckRecording'); % check if eyelink is recording
+       if status ~= 0
+           error('Tracker is not recording.') %if not recording send error message
+       else
+           status = EyeLink('Message','Trigger: ', triggers(2)); % if yes, send trigger 
+           if status == 0
+               triggerTimes(nTrial,2) = EyeLink('TrackerTime'); % store time trigger was sent
+           else
+               error('Message could not be sent.') 
+           end
+       end
+    end
+    
+    preCueTime = GetSecs - expStart;
+    trialTimes(nTrial,2) = preCueTime;
     
     % Cue-target SOA
     WaitSecs(t.cueTargetSOA);
@@ -424,7 +479,23 @@ for nTrial = 1:p.numTrials
     
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
-    trialTimes(nTrial,3) = Screen('Flip', window);
+    t1Time = Screen('Flip', window);
+    trialTimes(nTrial,3) = t1Time - expStart;
+    
+    % T1 Trigger
+    if strcmp(useEyeTracker, 'Yes')
+       status = EyeLink('CheckRecording'); % check if eyelink is recording
+       if status ~= 0
+           error('Tracker is not recording.') %if not recording send error message
+       else
+           status = EyeLink('Message','Trigger: ', triggers(3)); % if yes, send trigger 
+           if status == 0
+               triggerTimes(nTrial,3) = EyeLink('TrackerTime'); % store time trigger was sent
+           else
+               error('Message could not be sent.') 
+           end
+       end
+    end
     
     % Stim duration
     WaitSecs(t.targetDur);
@@ -470,7 +541,23 @@ for nTrial = 1:p.numTrials
     
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
-    trialTimes(nTrial,4) = Screen('Flip', window);
+    t2Time = Screen('Flip', window);
+    trialTimes(nTrial,4) = t2Time - expStart;
+    
+    % T2 Trigger
+    if strcmp(useEyeTracker, 'Yes')
+       status = EyeLink('CheckRecording'); % check if eyelink is recording
+       if status ~= 0
+           error('Tracker is not recording.') %if not recording send error message
+       else
+           status = EyeLink('Message','Trigger: ', triggers(4)); % if yes, send trigger 
+           if status == 0
+               triggerTimes(nTrial,4) = EyeLink('TrackerTime'); % store time trigger was sent
+           else
+               error('Message could not be sent.') 
+           end
+       end
+    end
     
     % Stim duration
     WaitSecs(t.targetDur);
@@ -514,6 +601,24 @@ for nTrial = 1:p.numTrials
         playSound(pahandle, cueTones(1,:)*soundAmp);
     end
     
+    postCueTime = GetSecs - expStart;
+    trialTimes(nTrial,5) = postCueTime;
+    
+    % Post-cue Trigger
+    if strcmp(useEyeTracker, 'Yes')
+       status = EyeLink('CheckRecording'); % check if eyelink is recording
+       if status ~= 0
+           error('Tracker is not recording.') %if not recording send error message
+       else
+           status = EyeLink('Message','Trigger: ', triggers(5)); % if yes, send trigger 
+           if status == 0
+               triggerTimes(nTrial,5) = EyeLink('TrackerTime'); % store time trigger was sent
+           else
+               error('Message could not be sent.') 
+           end
+       end
+    end
+    
     % Draw surroundStimulus if not baseline condition
     if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6 
         Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,5))
@@ -536,7 +641,8 @@ for nTrial = 1:p.numTrials
     
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     Screen('Flip', window);
-    startTrial = GetSecs; % get the start time of each trial
+    
+    startTrial = GetSecs - expStart; % get the start time of each trial
     
     switch usePowerMate
         case 'Yes'
@@ -610,9 +716,24 @@ for nTrial = 1:p.numTrials
                 error('Option not recognized.')
     end
 
-    trialEnd = GetSecs;
+    trialEnd = GetSecs - expStart;
     
     trialTimes(nTrial,end) = trialEnd;
+    
+    % Trial End Trigger
+    if strcmp(useEyeTracker, 'Yes')
+       status = EyeLink('CheckRecording'); % check if eyelink is recording
+       if status ~= 0
+           error('Tracker is not recording.') %if not recording send error message
+       else
+           status = EyeLink('Message','Trigger: ', triggers(6)); % if yes, send trigger 
+           if status == 0
+               triggerTimes(nTrial,6) = EyeLink('TrackerTime'); % store time trigger was sent
+           else
+               error('Message could not be sent.') 
+           end
+       end
+    end
     
     % Present center fixation; get ready for next trial
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation]);
@@ -646,7 +767,7 @@ for nTrial = 1:p.numTrials
     
 end
 
-t.endTime = (GetSecs-expStart)/60; %Get endtime of the experiment in seconds
+t.endTime = GetSecs-expStart; %Get endtime of the experiment in seconds
 %Draw some more text to the screen outside of the loop:
 Screen(window,'TextSize',30);
 byeByeText = 'Great work! You have finished this run.';
@@ -656,6 +777,28 @@ WaitSecs(2);
 Screen('LoadNormalizedGammaTable', window, OriginalCLUT);
 Screen('CloseAll')
 
+% Eye Tracker Recording OFF
+if strcmp(useEyeTracker, 'Yes')
+    Eyelink('StopRecording');
+    Eyelink('CloseFile');
+    Eyelink('ReceiveFile',edf_filename);
+end
+
+%% timeEvents
+t.trialTimes = trialTimes;
+timeEvents = nan(p.numTrials, size(t.trialTimes,2)-1); %[cueLeadTime cueTargetSOA targetSOA cueTargetSOA responseTime]
+
+for nEvent = 1:size(t.trialTimes,2)-1
+    for nTrial = 1:p.numTrials
+        timeEvents(nTrial, nEvent) = t.trialTimes(nTrial,nEvent+1) - t.trialTimes(nTrial,nEvent);
+    end
+end
+
+t.timeEvents = timeEvents;
+
+% Check timing
+% [t.cueStartTimes(1:2:end)+t.welcomeTime t.trialTimes(:,2) t.targetStartTimes(1:2:end)+t.welcomeTime t.trialTimes(:,3) ...
+% t.targetStartTimes(2:2:end)+t.welcomeTime t.trialTimes(:,4) t.cueStartTimes(2:2:end)+t.welcomeTime t.trialTimes(:,5)]
 %% SAVE OUT THE DATA FILE
 % cd(dataDir);
 % theData(runNumber).t = t;

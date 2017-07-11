@@ -51,7 +51,7 @@ for i=1:length(productNames)%for each possible device
         break;        
     end    
 end
-if deviceNumber==0%%error checking
+if deviceNumber==0 %%error checking
     error('No device by that name was detected');    
 end
 triggerKey = 46;                    % KbName('=+'); 
