@@ -20,7 +20,7 @@ Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
 p.subject = 'Pilot';
-p.runNumber = 101;
+p.runNumber = 1;
 p.numBlocks = 2; % has to be a multiple of 2 unique repetitions per run
 
 usePowerMate = 'Yes';
@@ -112,7 +112,7 @@ p.stimConfigurations = [1 2 3 4]; % [5 6] are baseline (no surround)
 p.stimConfigurationsNames = {'colinearT1cued' 'colinearT2cued' 'orthogonalT1cued' 'orthogonalT2cued' 'baselineT1cued' 'baseline T2cued'};
 
 % contrast parameters
-p.numContrasts = 1; % 4 for piloting
+p.numContrasts = 4; % 4 for piloting
 p.minContrast = 0.1;
 p.maxContrast = 0.75;
 p.t1Contrasts = 10.^linspace(log10(p.minContrast),log10(p.maxContrast),p.numContrasts);
@@ -135,18 +135,22 @@ p.innerFixation = p.outerFixation/1.5;
 % 4 = orientation gratings
 
 [F1, F2, F3] = BalanceFactors(p.numBlocks, 0, p.stimConfigurations, p.t1Contrasts, p.t2Contrasts);
-% fourth column in TrialEvents is order of appearance for surround or center
-% order = repmat(1:length(p.stimConfigurations), [p.numContrasts*(p.numContrasts*p.numBlocks), 1]);
-% orderBase = repmat(1:length(p.stimConfigurations), [(p.numContrasts*p.numBlocks), 1]);
-baselineConditions = repmat(5:6, [p.numContrasts*p.numBlocks, 1]);
-contrasts = repmat([p.t1Contrasts' p.t2Contrasts'], [p.numBlocks 1]);
+
 p.trialEvents = [F1, F2, F3];
+
+p.numTrialsPerConfig = length(find(p.trialEvents(:,1) == 1));
+p.numBaselineTrials = p.numTrialsPerConfig/2;
+
+baselineConditions = repmat(5:6, [p.numBaselineTrials, 1]);
+contrasts = repmat([p.t1Contrasts' p.t2Contrasts'], [length(baselineConditions)/p.numContrasts 1]);
+
 p.trialEvents = [p.trialEvents;...
     [baselineConditions(:) [[contrasts(:,1) Shuffle(contrasts(:,2))]; ... % zeros(p.numContrasts*p.numBlocks,1)
     [contrasts(:,1) Shuffle(contrasts(:,2))]]  ]]; %
 
 p.numTrials = size(p.trialEvents,1);
 p.numTrialsPerBlock = p.numTrials/p.numBlocks;
+p.allStimConfigs = unique(p.trialEvents(:,1))';
 
 % every trial should be a random orientation; 
 p.targetsOrientation = randsample(1:180, p.numTrials, true); % each target has the same orientation
@@ -165,15 +169,42 @@ end
 whichOrientation =  [p.targetsOrientation' p.surroundOrientation'];
 p.trialEvents(:, end+1:end+2) = whichOrientation;
 
-% Assign pre,post cues
+% Assign cue validity for each trial
 p.trialCuesNames = {'Valid' 'Invalid'};
 cueValidity = 0.75; % cue validity
-p.numValidTrials = cueValidity * p.numTrials; p.numInvalidTrials = p.numTrials - p.numValidTrials; % distribution of valid and invalid trials
-valids = ones(p.numValidTrials/(p.numTrials/length(p.stimConfigurations)),1);
-invalids = 2*ones(p.numInvalidTrials/(p.numTrials/length(p.stimConfigurations)),1);
-trialCuesBase = [valids; invalids]; % combine the valid and invalid vectors
-trialCues = repmat(trialCuesBase, p.numTrials/length(trialCuesBase),1); 
-p.trialEvents(:,end+1) = trialCues;
+
+trialCues = zeros(p.numTrials,1);
+
+for nStimConfig = 1:length(p.allStimConfigs)
+   configIndx = find(p.trialEvents(:,1)==nStimConfig); % find the index of the config in trialEvents
+   configIndxShuff = Shuffle(configIndx); %shuffle those indices
+   numConfig = length(configIndx); % # of trials of the config
+   numValids = floor(numConfig*cueValidity); % # of valid trials for the config
+   numInvalids = ceil(numConfig-numValids); % # of invalid trials for the config
+   
+   % assign valid and invalid cues 
+   for nValid = 1:numValids 
+      trialCues(configIndxShuff(nValid)) = 1; 
+   end
+   
+   for nInvalid = 1+numValids:numValids+numInvalids
+       trialCues(configIndxShuff(nInvalid)) = 2; 
+   end
+end
+
+p.trialEvents(:,end+1) = trialCues; % store trial cues at the end trialEvents
+
+% Check trial and cue distribution
+trial_cueDistrib = nan(length(p.trialCuesNames),length(p.allStimConfigs));
+
+for nCue = 1:length(p.trialCuesNames)
+    for nConfig = 1:length(p.allStimConfigs)
+        trial_cueDistrib(nCue,nConfig) = sum(p.trialEvents(:,1)==nConfig & p.trialEvents(:,end)==nCue);
+    end
+end
+
+trial_cueDistrib(:,end+1) = sum(trial_cueDistrib,2);
+trial_cueDistrib
 
 p.trialEvents % [stimConfiguration, t1Contrast, t2Contrast, targOrientation, surrOrientation, cueValidity]
 p.trialEvents = Shuffle(p.trialEvents); 
@@ -191,9 +222,17 @@ p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
 
 % Create triggers for trial events
 % [trialStart preCue T1 T2 postCue trialEnd] 
-triggerBase = {'Trial Starts' 'pre-cue' 'T1' 'T2' 'post-cue' 'Trial Ends'};
-triggers = {(1:p.numTrials)' repmat(triggerBase, p.numTrials,1)};
-    
+triggerNames = {'Trial Starts' 'pre-cue' 'T1' 'T2' 'post-cue' 'Trial Ends'};
+triggersBase = [1 2 3 4 5 6];
+
+triggers = nan(p.numTrials,length(triggersBase));
+
+for nTrial = 1:p.numTrials
+    for nEvent = 1:length(triggersBase)
+        triggerChar = [num2str(nTrial) num2str(triggersBase(nEvent))];
+        triggers(nTrial,nEvent) = str2num(triggerChar);
+    end
+end
 %% TIMING PARAMETERS
 t.targetDur = 6/60; % nFramesPerTarget/refrate (s) max = 12 
 t.targetSOA = 15/60; %15/60 (250ms), 16/60 (267ms), 18/60 (300ms) (s)
@@ -396,7 +435,18 @@ end
 
 nBlock = 1;
 trialTimes = zeros(p.numTrials,6); % [startTrial preCueTime t1Time t2Time postCueTime endTrial]
-triggerTimes = nan(size(trialTimes));
+
+triggersBase = 1:6;
+triggerTimes = nan(p.numTrials,length(triggersBase));
+triggers = nan(p.numTrials,length(triggersBase));
+
+for nTrial = 1:p.numTrials
+    for nEvent = 1:length(triggersBase)
+        triggerChar = [num2str(nTrial) num2str(triggersBase(nEvent))];
+        triggers(nTrial,nEvent) = str2double(triggerChar);
+    end
+end
+
 expStart = GetSecs; % baseline experiment start time
 welcomeTime = GetSecs - welcomeStart;
 t.welcomeTime = welcomeTime;
@@ -409,7 +459,7 @@ for nTrial = 1:p.numTrials
        if status ~= 0
            error('Tracker is not recording.') %if not recording send error message
        else
-           status = EyeLink('Message',['Trigger: ' num2str(triggers{1}(nTrial)) triggers{2}(1)]); % if yes, send trigger 
+           status = EyeLink('Message','Trigger: ', triggers(nTrial,1)); % if yes, send trigger 
            if status == 0
               triggerTimes(nTrial,1) = EyeLink('TrackerTime'); % store time trigger was sent 
            else
@@ -802,10 +852,10 @@ t.timeEvents = timeEvents;
 % [t.cueStartTimes(1:2:end)+t.welcomeTime t.trialTimes(:,2) t.targetStartTimes(1:2:end)+t.welcomeTime t.trialTimes(:,3) ...
 % t.targetStartTimes(2:2:end)+t.welcomeTime t.trialTimes(:,4) t.cueStartTimes(2:2:end)+t.welcomeTime t.trialTimes(:,5)]
 %% SAVE OUT THE DATA FILE
-% cd(dataDir);
-% theData(runNumber).t = t;
-% theData(runNumber).p = p;
-% theData(runNumber).data = data;
-% eval(['save vTA_surrSuppression_', p.subject, '.mat theData'])
-% 
-% cd(expDir);
+cd(dataDir);
+theData(p.runNumber).t = t;
+theData(p.runNumber).p = p;
+theData(p.runNumber).data = data;
+eval(['save vTA_surrSuppression_', p.subject, '.mat theData'])
+
+cd(expDir);
