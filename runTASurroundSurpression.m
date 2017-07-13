@@ -20,7 +20,6 @@ Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
 p.subject = 'Pilot';
-p.runNumber = 1;
 p.numBlocks = 2; % has to be a multiple of 2 unique repetitions per run
 
 usePowerMate = 'Yes';
@@ -70,7 +69,7 @@ t.theDate = datestr(now,'yymmdd'); % Collect today's date
 t.timeStamp = datestr(now,'HHMM'); % Timestamp
 
 cd(dataDir);
-if exist(['vTA_surrSuppression_', p.subject, '.mat'],'file');
+if exist(['vTA_surrSuppression_', p.subject, '.mat'],'file') ~= 0
     load(['vTA_surrSuppression_', p.subject, '.mat']);
     runNumber = length(theData)+1;
 else
