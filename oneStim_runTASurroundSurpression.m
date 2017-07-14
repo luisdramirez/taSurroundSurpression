@@ -22,7 +22,7 @@ Screen('Preference', 'SkipSyncTests', 0);
 p.subject = 'Pilot';
 p.runNumber = 1;
 p.numBlocks = 2; % has to be a multiple of 2 unique repetitions per run
-% p.numBreaks = p.numBlocks*2;
+p.numBreaks = p.numBlocks*2;
 
 usePowerMate = 'Yes';
 useEyeTracker = 'No';
@@ -90,7 +90,7 @@ p.pixPerDeg = round(p.screenWidthPixels(3)/visAngle); % pixels per degree visual
 p.grey = 128;
 
 %% GRATING PARAMETERS
-p.stimConfigurations = [1 2 3 ]; 
+p.stimConfigurations = [1 2 3]; 
 p.stimConfigurationsNames = {'colinear' 'orthogonal' 'baseline'};
 
 % contrast parameters
@@ -120,19 +120,10 @@ p.innerFixation = p.outerFixation/1.5;
 p.trialEvents = [F1, F2];
 
 p.numTrialsPerConfig = length(find(p.trialEvents(:,1) == 1));
-% p.numBaselineTrials = p.numTrialsPerConfig/2;
-
-% baselineConditions = repmat(5:6, [p.numBaselineTrials, 1]);
-% contrasts = repmat([p.t1Contrasts' p.t2Contrasts'], [length(baselineConditions)/p.numContrasts 1]);
-% 
-% p.trialEvents = [p.trialEvents;...
-%     [baselineConditions(:) [[contrasts(:,1) Shuffle(contrasts(:,2))]; ... % zeros(p.numContrasts*p.numBlocks,1)
-%     [contrasts(:,1) Shuffle(contrasts(:,2))]]  ]]; %
 
 p.numTrials = size(p.trialEvents,1);
-% p.numTrialsPerBreak = p.numTrials/p.numBreaks;
+p.numTrialsPerBreak = p.numTrials/p.numBreaks;
 p.numTrialsPerBlock = p.numTrials/p.numBlocks;
-% p.allStimConfigs = unique(p.trialEvents(:,1))';
 
 % every trial should be a random orientation; 
 p.targetsOrientation = randsample(1:180, p.numTrials, true); % each target has the same orientation
@@ -342,6 +333,7 @@ if strcmp(useEyeTracker, 'Yes')
 end
 
 nBlock = 1;
+nBreak = 1;
 trialTimes = zeros(p.numTrials,3); % [startTrial t1Time endTrial]
 
 triggersBase = 1:length(trialTimes);
@@ -477,9 +469,8 @@ for nTrial = 1:p.numTrials
                 end
                 if pmButton == 1;
                     data.estimatedContrast(nTrial) = estContrast;
- 
                     data.differenceContrast(nTrial) = p.trialEvents(nTrial,2) - data.estimatedContrast(nTrial);
-
+                    
                     data.responseTime(nTrial) = (GetSecs - startTrial);
                     pmButton = 0;
                     break;
@@ -538,7 +529,26 @@ for nTrial = 1:p.numTrials
     WaitSecs(t.iti);
  
     %%% Rest period
-    if  nTrial == p.numTrialsPerBlock*nBlock
+    if nTrial == p.numTrialsPerBreak*nBreak && nTrial ~= p.numTrialsPerBlock*nBlock
+        rest = GetSecs;
+        
+        restText = ['You can take a short break now, or press the dial to continue.'];
+        DrawFormattedText(window, restText, 'center', 'center', white);
+        Screen('Flip', window);
+        
+        nBreak = nBreak+1; 
+        
+        pmButtonBreak = 0;
+        
+        while 1
+            [pmButtonBreak, a] = PsychPowerMate('Get', powermate);
+            if pmButtonBreak == 1;
+                break;
+            end
+        end
+        
+        t.restTime = (GetSecs-rest)/60;         
+    elseif nTrial == p.numTrialsPerBlock*nBlock
         rest = GetSecs;
         
         restText = ['Block ' num2str(nBlock) ' of ' num2str(p.numBlocks) ' completed! You can take a short break now, ' '' '\n' ...
@@ -546,7 +556,8 @@ for nTrial = 1:p.numTrials
         DrawFormattedText(window, restText, 'center', 'center', white);
         Screen('Flip', window);
         
-        nBlock = nBlock+1; 
+        nBlock = nBlock+1;
+        nBreak = nBreak+1; 
         
         pmButtonBreak = 0;
         
@@ -558,9 +569,7 @@ for nTrial = 1:p.numTrials
         end
         
         t.restTime = (GetSecs-rest)/60;      
-    end
- 
-    
+    end 
 end
 
 t.endTime = GetSecs-expStart; %Get endtime of the experiment in seconds
