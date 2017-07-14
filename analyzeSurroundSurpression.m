@@ -11,15 +11,17 @@ else
     error('Data file does not exist.')
 end
 
+targetContrasts = theData(runNumber).p.t1Contrasts;
 estimatedContrast = theData(runNumber).data.estimatedContrast; %subject response
 differenceContrast = theData(runNumber).data.differenceContrast; %how far off from target
 responseTime = theData(runNumber).data.responseTime;
 
 % [stimConfig cueValidity t1Contrast t2Contrast estimatedContrast differenceContrast targetOrientation]
-rawData = [theData(101).p.trialEvents(:,1), theData(101).p.trialEvents(:,end), theData(101).p.trialEvents(:,2), theData(101).p.trialEvents(:,3), ...
-    theData(101).data.estimatedContrast, theData(101).data.differenceContrast theData(101).p.trialEvents(:,4)];
+rawData = [theData(runNumber).p.trialEvents(:,1), theData(runNumber).p.trialEvents(:,end), theData(runNumber).p.trialEvents(:,2),...
+    theData(runNumber).p.trialEvents(:,3), theData(runNumber).data.estimatedContrast,...
+    theData(runNumber).data.differenceContrast theData(runNumber).p.trialEvents(:,4)];
 
-% raw data separated into configurations [t1cued; t2cued]
+% Raw data separated into configurations [t1cued; t2cued]
 collTrialsIndx = [rawData(:,1) == 1 rawData(:,1) == 2]; 
 orthTrialsIndx = [rawData(:,1) == 3 rawData(:,1) == 4];
 baseTrialsIndx = [rawData(:,1) == 5 rawData(:,1) == 6];
@@ -29,6 +31,8 @@ collTrials = [rawData(collTrialsIndx(:,1),:); rawData(collTrialsIndx(:,2),:)];
 orthTrials = [rawData(orthTrialsIndx(:,1),:); rawData(orthTrialsIndx(:,2),:)];
 baseTrials = [rawData(baseTrialsIndx(:,1),:); rawData(baseTrialsIndx(:,2),:)];
 
+
+% Trials separated by condition and target
 collT1Trials = [collTrials(collTrials(:,1)==1,2) collTrials(collTrials(:,1)==1,5:6)]; % [cueValidity estimatedContrast differenceContrast] 
 collT2Trials = [collTrials(collTrials(:,1)==2,2) collTrials(collTrials(:,1)==2,5:6)];
 
@@ -38,50 +42,89 @@ orthT2Trials = [orthTrials(orthTrials(:,1)==4,2) orthTrials(orthTrials(:,1)==4,5
 baseT1Trials = [baseTrials(baseTrials(:,1)==5,2) baseTrials(baseTrials(:,1)==5,5:6)]; 
 baseT2Trials = [baseTrials(baseTrials(:,1)==6,2) baseTrials(baseTrials(:,1)==6,5:6)];
 
+% Trials separated by validity
+collValidTrials = collTrials(collTrials(:,2)==1,:);
+orthValidTrials = orthTrials(orthTrials(:,2)==1,:);
+baseValidTrials = baseTrials(baseTrials(:,2)==1,:);
 
-% [allT1 allT2; validT1 validT2; invalidT1 invalidT2]
-avgCollDiff = [ mean(abs(collT1Trials(:,3))) mean(abs(collT2Trials(:,3)));... % [differenceContrastT1 differenceContrastT2]
-    mean(abs( collT1Trials(collT1Trials(:,1)==1,3) )) mean(abs( collT2Trials(collT2Trials(:,1)==1,3) ));...
-    mean(abs( collT1Trials(collT1Trials(:,1)==2,3) )) mean(abs( collT2Trials(collT2Trials(:,1)==2,3) ))]; 
+collInvalidTrials = collTrials(collTrials(:,2)==2,:);
+orthInvalidTrials = orthTrials(orthTrials(:,2)==2,:);
+baseInvalidTrials = baseTrials(baseTrials(:,2)==2,:);
 
-avgOrthDiff = [ mean(abs(orthT1Trials(:,3))) mean(abs(orthT2Trials(:,3)));...
-    mean(abs( orthT1Trials(orthT1Trials(:,1)==1,3) )) mean(abs( orthT2Trials(orthT2Trials(:,1)==1,3) ));...
-    mean(abs( orthT1Trials(orthT1Trials(:,1)==2,3) )) mean(abs( orthT2Trials(orthT2Trials(:,1)==2,3) ))]; 
+collValidCuedContrasts = nan(length(collValidTrials),2);
 
-avgBaseDiff = [ mean(abs(baseT1Trials(:,3))) mean(abs(baseT2Trials(:,3)));...
-    mean(abs( baseT1Trials(baseT1Trials(:,1)==1,3) )) mean(abs( baseT2Trials(baseT2Trials(:,1)==1,3) ));...
-    mean(abs( baseT1Trials(baseT1Trials(:,1)==2,3) )) mean(abs( baseT2Trials(baseT2Trials(:,1)==2,3) ))];
-
-%[t1Valid t1Invalid; t2Valid t2Invalid]
-Y1 = [avgCollDiff(2,1) avgCollDiff(3,1); avgCollDiff(2,2) avgCollDiff(3,2)]; 
-bar(Y1)
-title('collinear')
-legend('valid','invalid')
-xlabel('target')
-ylabel('average difference contrast')
-axis square
-ylim([0 1])
-
-Y2 = [avgOrthDiff(2,1) avgOrthDiff(3,1); avgOrthDiff(2,2) avgOrthDiff(3,2)];
-figure
-bar(Y2)
-title('orthogonal')
-legend('valid','invalid')
-xlabel('target')
-ylabel('average difference contrast')
-axis square
-ylim([0 1])
+for nTrial = 1:length(collValidTrials)
+    if collValidTrials(nTrial,1) == 1 % grab t1 contrast and report
+        collValidCuedContrasts(nTrial,1) = collValidTrials(nTrial,3);
+        collValidCuedContrasts(nTrial,2) = collValidTrials(nTrial,5);
+    elseif collValidTrials(nTrial,1) == 2 % grab t2 contrast and report
+        collValidCuedContrasts(nTrial,1) = collValidTrials(nTrial,4);
+        collValidCuedContrasts(nTrial,2) = collValidTrials(nTrial,5);
+    end
+end
 
 
-Y3 = [avgBaseDiff(2,1) avgBaseDiff(3,1); avgBaseDiff(2,2) avgBaseDiff(3,2)];
-figure
-bar(Y3)
-title('baseline')
-legend('valid','invalid')
-xlabel('target')
-ylabel('average difference contrast')
-axis square
-ylim([0 1])
+orthValidCuedContrasts = nan(length(orthValidTrials),2);
+
+for nTrial = 1:length(orthValidTrials)
+    if orthValidTrials(nTrial,1) == 3 % grab t1 contrast and report
+        orthValidCuedContrasts(nTrial,1) = orthValidTrials(nTrial,3);
+        orthValidCuedContrasts(nTrial,2) = orthValidTrials(nTrial,5);
+    elseif orthValidTrials(nTrial,1) == 4 % grab t2 contrast and report
+        orthValidCuedContrasts(nTrial,1) = orthValidTrials(nTrial,4);
+        orthValidCuedContrasts(nTrial,2) = orthValidTrials(nTrial,5);
+    end
+end
+
+baseValidCuedContrasts = nan(length(baseValidTrials),2);
+
+for nTrial = 1:length(baseValidTrials)
+    if baseValidTrials(nTrial,1) == 5 % grab t1 contrast and report
+        baseValidCuedContrasts(nTrial,1) = baseValidTrials(nTrial,3);
+        baseValidCuedContrasts(nTrial,2) = baseValidTrials(nTrial,5);
+    elseif baseValidTrials(nTrial,1) == 6 % grab t2 contrast and report
+        baseValidCuedContrasts(nTrial,1) = baseValidTrials(nTrial,4);
+        baseValidCuedContrasts(nTrial,2) = baseValidTrials(nTrial,5);
+    end
+end
+
+collInvalidCuedContrasts = nan(length(collInvalidTrials),2);
+
+for nTrial = 1:length(collInvalidTrials)
+    if collInvalidTrials(nTrial,1) == 1 % grab t1 contrast and report
+        collInvalidCuedContrasts(nTrial,1) = collInvalidTrials(nTrial,3);
+        collInvalidCuedContrasts(nTrial,2) = collInvalidTrials(nTrial,5);
+    elseif collInvalidTrials(nTrial,1) == 2 % grab t2 contrast and report
+        collInvalidCuedContrasts(nTrial,1) = collInvalidTrials(nTrial,4);
+        collInvalidCuedContrasts(nTrial,2) = collInvalidTrials(nTrial,5);
+    end
+
+end
+
+orthInvalidCuedContrasts = nan(length(orthInvalidTrials),2);
+
+for nTrial = 1:length(orthInvalidTrials)
+    if orthInvalidTrials(nTrial,1) == 3 % grab t1 contrast and report
+        orthInvalidCuedContrasts(nTrial,1) = orthInvalidTrials(nTrial,3);
+        orthInvalidCuedContrasts(nTrial,2) = orthInvalidTrials(nTrial,5);
+    elseif orthInvalidTrials(nTrial,1) == 4 % grab t2 contrast and report
+        orthInvalidCuedContrasts(nTrial,1) = orthInvalidTrials(nTrial,4);
+        orthInvalidCuedContrasts(nTrial,2) = orthInvalidTrials(nTrial,5);
+    end
+end
+
+baseInvalidCuedContrasts = nan(length(baseInvalidTrials),2);
+
+for nTrial = 1:length(baseInvalidTrials)
+    if baseInvalidTrials(nTrial,1) == 5 % grab t1 contrast and report
+        baseInvalidCuedContrasts(nTrial,1) = baseInvalidTrials(nTrial,3);
+        baseInvalidCuedContrasts(nTrial,2) = baseInvalidTrials(nTrial,5);
+    elseif baseInvalidTrials(nTrial,1) == 6 % grab t2 contrast and report
+        baseInvalidCuedContrasts(nTrial,1) = baseInvalidTrials(nTrial,4);
+        baseInvalidCuedContrasts(nTrial,2) = baseInvalidTrials(nTrial,5);
+    end
+end
+
 
 cd(expDir)
 end
