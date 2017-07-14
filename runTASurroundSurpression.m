@@ -40,8 +40,8 @@ end
 % Check which devicenumber the keyboard is assigned to
 deviceNumber = 0;
 [keyBoardIndices, productNames] = GetKeyboardIndices;
-deviceString = 'Corsair Corsair K95W Gaming Keyboard';
-% deviceString = 'Apple Inc. Apple Keyboard';
+% deviceString = 'Corsair Corsair K95W Gaming Keyboard';
+deviceString = 'Apple Inc. Apple Keyboard';
 % deviceString = 'Apple Keyboard';
 % deviceString = 'CHICONY USB Keyboard';
 for i = 1:length(productNames)
@@ -105,7 +105,7 @@ p.stimConfigurations = [1 2 3 4]; % [5 6] are baseline (no surround)
 p.stimConfigurationsNames = {'colinearT1cued' 'colinearT2cued' 'orthogonalT1cued' 'orthogonalT2cued' 'baselineT1cued' 'baseline T2cued'};
 
 % contrast parameters
-p.numContrasts = 3;
+p.numContrasts = 1;
 p.minContrast = 0.1;
 p.maxContrast = 0.75;
 p.t1Contrasts = 10.^linspace(log10(p.minContrast),log10(p.maxContrast),p.numContrasts);
@@ -275,7 +275,7 @@ for n = 1:p.numTrials
 end
 
 %% WINDOW SETUP
-[window,rect] = Screen('OpenWindow', screens(2), p.grey);
+[window,rect] = Screen('OpenWindow', screens(1), p.grey);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
 % load('MyGammaTable.mat');
 % Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
