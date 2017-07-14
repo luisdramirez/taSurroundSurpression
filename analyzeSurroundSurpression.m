@@ -1,6 +1,9 @@
 %%% analyzeSurroundSurpression
 function [rawData] = analyzeSurroundSurpression(subject, runNumber)
 
+
+plotData = 'Yes';
+
 expDir = pwd;
 dataDir = 'data';
 cd(dataDir)
@@ -51,20 +54,24 @@ collInvalidTrials = collTrials(collTrials(:,2)==2,:);
 orthInvalidTrials = orthTrials(orthTrials(:,2)==2,:);
 baseInvalidTrials = baseTrials(baseTrials(:,2)==2,:);
 
-collValidCuedContrasts = nan(length(collValidTrials),2);
+collValidCuedContrasts = nan(length(collValidTrials),2); % [targetContrast estimatedContrast]
+collValidCuedContrastsAvg = zeros(1,length(targetContrasts));
 
 for nTrial = 1:length(collValidTrials)
     if collValidTrials(nTrial,1) == 1 % grab t1 contrast and report
         collValidCuedContrasts(nTrial,1) = collValidTrials(nTrial,3);
-        collValidCuedContrasts(nTrial,2) = collValidTrials(nTrial,5);
+        collValidCuedContrasts(nTrial,2) = collValidTrials(nTrial,5);      
     elseif collValidTrials(nTrial,1) == 2 % grab t2 contrast and report
         collValidCuedContrasts(nTrial,1) = collValidTrials(nTrial,4);
         collValidCuedContrasts(nTrial,2) = collValidTrials(nTrial,5);
-    end
+        
+        
+    end 
 end
 
 
 orthValidCuedContrasts = nan(length(orthValidTrials),2);
+orthValidCuedContrastsAvg = zeros(1,length(targetContrasts));
 
 for nTrial = 1:length(orthValidTrials)
     if orthValidTrials(nTrial,1) == 3 % grab t1 contrast and report
@@ -77,6 +84,7 @@ for nTrial = 1:length(orthValidTrials)
 end
 
 baseValidCuedContrasts = nan(length(baseValidTrials),2);
+baseValidCuedContrastsAvg = zeros(1,length(targetContrasts));
 
 for nTrial = 1:length(baseValidTrials)
     if baseValidTrials(nTrial,1) == 5 % grab t1 contrast and report
@@ -89,6 +97,7 @@ for nTrial = 1:length(baseValidTrials)
 end
 
 collInvalidCuedContrasts = nan(length(collInvalidTrials),2);
+collInvalidCuedContrastsAvg = zeros(1,length(targetContrasts));
 
 for nTrial = 1:length(collInvalidTrials)
     if collInvalidTrials(nTrial,1) == 1 % grab t1 contrast and report
@@ -102,6 +111,7 @@ for nTrial = 1:length(collInvalidTrials)
 end
 
 orthInvalidCuedContrasts = nan(length(orthInvalidTrials),2);
+orthInvalidCuedContrastsAvg = zeros(1,length(targetContrasts));
 
 for nTrial = 1:length(orthInvalidTrials)
     if orthInvalidTrials(nTrial,1) == 3 % grab t1 contrast and report
@@ -114,6 +124,7 @@ for nTrial = 1:length(orthInvalidTrials)
 end
 
 baseInvalidCuedContrasts = nan(length(baseInvalidTrials),2);
+baseInvalidCuedContrastsAvg = zeros(1,length(targetContrasts));
 
 for nTrial = 1:length(baseInvalidTrials)
     if baseInvalidTrials(nTrial,1) == 5 % grab t1 contrast and report
@@ -125,6 +136,53 @@ for nTrial = 1:length(baseInvalidTrials)
     end
 end
 
+% Organize averages by contrast
+for nContrast = 1:length(targetContrasts)
+   collValidCuedContrastsAvg(nContrast) = mean(collValidCuedContrasts(collValidCuedContrasts(:,1)==targetContrasts(nContrast),2));
+   orthValidCuedContrastsAvg(nContrast) = mean(orthValidCuedContrasts(orthValidCuedContrasts(:,1)==targetContrasts(nContrast),2)); 
+   baseValidCuedContrastsAvg(nContrast) = mean(baseValidCuedContrasts(baseValidCuedContrasts(:,1)==targetContrasts(nContrast),2)); 
+   
+   collInvalidCuedContrastsAvg(nContrast) = mean(collInvalidCuedContrasts(collInvalidCuedContrasts(:,1)==targetContrasts(nContrast),2));
+   orthInvalidCuedContrastsAvg(nContrast) = mean(orthInvalidCuedContrasts(orthInvalidCuedContrasts(:,1)==targetContrasts(nContrast),2)); 
+   baseInvalidCuedContrastsAvg(nContrast) = mean(baseInvalidCuedContrasts(baseInvalidCuedContrasts(:,1)==targetContrasts(nContrast),2)); 
+end
 
+validContrastAvgs = [collValidCuedContrastsAvg; orthValidCuedContrastsAvg; baseValidCuedContrastsAvg];
+invalidContrastAvgs = [collInvalidCuedContrastsAvg; orthInvalidCuedContrastsAvg; baseInvalidCuedContrastsAvg];
+
+
+
+%% PLOT DATA
+if strcmp(plotData, 'Yes')
+     
+    plot(targetContrasts, validContrastAvgs(1,:))
+    hold on
+    plot(targetContrasts, validContrastAvgs(2,:))
+    plot(targetContrasts, validContrastAvgs(3,:))
+    plot(0:0.1:1,0:0.1:1)
+    title('valid')
+    legend('coll','ortho','base')
+    xlabel('contrasts')
+    ylabel('perceived contrast')
+%     axis square
+    ylim([0 1])
+    
+    
+    figure
+    plot(targetContrasts, invalidContrastAvgs(1,:))
+    hold on
+    plot(targetContrasts, invalidContrastAvgs(2,:))
+    plot(targetContrasts(~isnan(invalidContrastAvgs(3,:))), invalidContrastAvgs(~isnan(invalidContrastAvgs(3,:))))
+    plot(0:0.1:1,0:0.1:1)
+    title('invalid')
+    legend('coll','ortho','base')
+    xlabel('contrasts')
+    ylabel('perceived contrast')
+%     axis square
+    ylim([0 1]) 
+end
+%%
 cd(expDir)
 end
+
+
