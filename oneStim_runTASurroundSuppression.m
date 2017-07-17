@@ -21,7 +21,7 @@ Screen('Preference', 'SkipSyncTests', 0);
 % Subject name and run number
 p.subject = 'Pre-Pilot_LR';
 % p.runNumber = 1;
-p.numBlocks = 1; % has to be a multiple of 2 unique repetitions per run
+p.numBlocks = 2;
 p.numBreaks = p.numBlocks*2;
 
 usePowerMate = 'Yes';
@@ -162,11 +162,10 @@ p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
 t.targetDur = 6/60; % nFramesPerTarget/refrate (s) max = 12
 t.targetLeadTime = 1; % (s)
 t.responseLeadTime = 1; % (s)
-t.feedbackDur = 0.3; % (s)
 t.iti = 1; % (s)
 t.startTime = 2; % (s)
 t.responseTime = []; % (s)
-t.trialDur = t.targetDur + t.targetLeadTime + t.responseLeadTime; % duration of the longest trial
+t.trialDur =  t.targetLeadTime + t.targetDur + t.responseLeadTime; % duration of the longest trial
 t.trialDurLongest = t.trialDur + t.startTime;
 
 jit = 0:0.2:1;
