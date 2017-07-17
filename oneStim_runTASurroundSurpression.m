@@ -19,9 +19,9 @@ KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
-p.subject = 'Pre-Pilot_LR';
+p.subject = 'Pre-Pilot_YW';
 % p.runNumber = 1;
-p.numBlocks = 1; % has to be a multiple of 2 unique repetitions per run
+p.numBlocks = 10; % has to be a multiple of 2 unique repetitions per run
 p.numBreaks = p.numBlocks*2;
 
 usePowerMate = 'Yes';
@@ -235,7 +235,7 @@ for n = 1:p.numTrials
 end
 
 %% WINDOW SETUP
-[window,rect] = Screen('OpenWindow', screens(2), p.grey,[],[],[],[],8);
+[window,rect] = Screen('OpenWindow', screens(1), p.grey,[],[],[],[],8);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
 load('linearizedCLUT.mat');
 Screen('LoadNormalizedGammaTable', window, linearizedCLUT);
