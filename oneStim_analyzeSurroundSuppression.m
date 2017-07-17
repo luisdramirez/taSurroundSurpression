@@ -1,7 +1,7 @@
 %%% analyzeSurroundSurpression
 function analyzeSurroundSurpression(subject)
 
-subject = 'Pre-Pilot_LR';
+subject = 'Pre-Pilot_YW';
 
 plotData = 'Yes';
 
@@ -36,6 +36,7 @@ collTrials = rawData(collTrialsIndx(:),:);
 orthTrials = rawData(orthTrialsIndx(:),:); 
 baseTrials = rawData(baseTrialsIndx(:),:); 
 
+%pre-allocate space for means and stdvs
 collContrastAvg = zeros(1,length(targetContrasts));
 orthContrastAvg = zeros(1,length(targetContrasts));
 baseContrastAvg = zeros(1,length(targetContrasts));
@@ -57,6 +58,8 @@ for nContrast = 1:length(targetContrasts)
 end
 
 contrastAvgs = [collContrastAvg; orthContrastAvg; baseContrastAvg];
+
+% standard error
 collContrastSTE = collContrastSTD/sqrt(length(collTrials));
 orthContrastSTE = orthContrastSTD/sqrt(length(orthTrials));
 baseContrastSTE = baseContrastSTD/sqrt(length(baseTrials));
@@ -69,7 +72,7 @@ if strcmp(plotData, 'Yes')
 %     plot(targetContrasts, contrastAvgs(2,:)) %orthogonal data
 %     plot(targetContrasts, contrastAvgs(3,:)) %baseline data
 %     axis square
-    ylim([0 1])
+
     errorbar(targetContrasts, contrastAvgs(1,:), collContrastSTE) %colinear error
     hold on
     errorbar(targetContrasts, contrastAvgs(2,:), orthContrastSTE) %orthogonal error
@@ -79,9 +82,7 @@ if strcmp(plotData, 'Yes')
     xlabel('contrast')
     ylabel('perceived contrast')
     legend('coll','ortho','base','unity')
-
-
-    
+    ylim([0 1]) 
 end
 
 cd(expDir)
