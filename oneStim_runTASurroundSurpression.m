@@ -159,7 +159,7 @@ p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
 
 
 %% TIMING PARAMETERS
-t.targetDur = 60/60; % nFramesPerTarget/refrate (s) max = 12
+t.targetDur = 30/60; % nFramesPerTarget/refrate (s) max = 12
 t.targetLeadTime = 1; % (s)
 t.retention = 0.8; % (s)
 t.feedbackDur = 0.3; % (s)
