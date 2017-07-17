@@ -1,8 +1,7 @@
 %%% analyzeSurroundSurpression
-function analyzeSurroundSurpression(subject, runNumber)
+function analyzeSurroundSurpression(subject)
 
 subject = 'Pre-Pilot_LR';
-runNumber = 1;
 
 plotData = 'Yes';
 
@@ -12,6 +11,7 @@ cd(dataDir)
 
 if exist(['vTA_surrSuppressionOneStim_', subject, '.mat'],'file') ~= 0
     load(['vTA_surrSuppressionOneStim_', subject, '.mat']);
+    runNumber = length(theData);
 else
     error('Data file does not exist.')
 end
@@ -57,6 +57,9 @@ for nContrast = 1:length(targetContrasts)
 end
 
 contrastAvgs = [collContrastAvg; orthContrastAvg; baseContrastAvg];
+collContrastSTE = collContrastSTD/sqrt(length(collTrials));
+orthContrastSTE = orthContrastSTD/sqrt(length(orthTrials));
+baseContrastSTE = baseContrastSTD/sqrt(length(baseTrials));
 
 %% PLOT DATA
 if strcmp(plotData, 'Yes')
@@ -65,22 +68,22 @@ if strcmp(plotData, 'Yes')
 
 %     plot(targetContrasts, contrastAvgs(2,:)) %orthogonal data
 %     plot(targetContrasts, contrastAvgs(3,:)) %baseline data
-    title('contrast vs. perceived contrast')
-    xlabel('contrasts')
-    ylabel('perceived contrast')
 %     axis square
     ylim([0 1])
-    errorbar(targetContrasts, contrastAvgs(1,:), collContrastSTD) %colinear error
+    errorbar(targetContrasts, contrastAvgs(1,:), collContrastSTE) %colinear error
     hold on
-    errorbar(targetContrasts, contrastAvgs(2,:), orthContrastSTD) %orthogonal error
-    errorbar(targetContrasts, contrastAvgs(3,:), baseContrastSTD) %baseline error
-    legend('coll','ortho','base')
+    errorbar(targetContrasts, contrastAvgs(2,:), orthContrastSTE) %orthogonal error
+    errorbar(targetContrasts, contrastAvgs(3,:), baseContrastSTE) %baseline error
     plot(0:0.1:1,0:0.1:1)
+    title('contrast vs. perceived contrast')
+    xlabel('contrast')
+    ylabel('perceived contrast')
+    legend('coll','ortho','base','unity')
 
 
     
 end
-%%
+
 cd(expDir)
 end
 

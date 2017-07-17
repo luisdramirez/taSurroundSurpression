@@ -1,8 +1,7 @@
 %%% analyzeSurroundSurpression
-function [rawData] = analyzeSurroundSurpression(subject, runNumber)
+function [rawData] = analyzeSurroundSurpression(subject)
 
 subject = 'Pre-Pilot';
-runNumber = 1;
 
 plotData = 'Yes';
 
@@ -12,6 +11,7 @@ cd(dataDir)
 
 if exist(['vTA_surrSuppression_', subject, '.mat'],'file') ~= 0
     load(['vTA_surrSuppression_', subject, '.mat']);
+    runNumber = length(theData);
 else
     error('Data file does not exist.')
 end

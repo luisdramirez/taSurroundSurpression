@@ -21,7 +21,7 @@ Screen('Preference', 'SkipSyncTests', 0);
 % Subject name and run number
 p.subject = 'Pre-Pilot_LR';
 % p.runNumber = 1;
-p.numBlocks = 10; % has to be a multiple of 2 unique repetitions per run
+p.numBlocks = 1; % has to be a multiple of 2 unique repetitions per run
 p.numBreaks = p.numBlocks*2;
 
 usePowerMate = 'Yes';
@@ -102,8 +102,8 @@ p.surroundContrast = 1;
 
 % size parameters
 p.centerSize = round(1 * p.pixPerDeg);
-p.surroundSize = p.centerSize * 3;
-p.gapSize = round(0.08 * p.pixPerDeg);
+p.surroundSize = p.centerSize * 4;
+p.gapSize = round(0.01 * p.pixPerDeg);
 p.outerFixation = round(0.05 * p.pixPerDeg);
 p.innerFixation = p.outerFixation/1.5;
 
@@ -159,14 +159,14 @@ p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
 
 
 %% TIMING PARAMETERS
-t.targetDur = 60/60; % nFramesPerTarget/refrate (s) max = 12
+t.targetDur = 6/60; % nFramesPerTarget/refrate (s) max = 12
 t.targetLeadTime = 1; % (s)
-t.retention = 0.8; % (s)
+t.responseLeadTime = 1; % (s)
 t.feedbackDur = 0.3; % (s)
 t.iti = 1; % (s)
 t.startTime = 2; % (s)
 t.responseTime = []; % (s)
-t.trialDur = t.targetLeadTime*2 + t.targetDur; % duration of the longest trial
+t.trialDur = t.targetDur + t.targetLeadTime + t.responseLeadTime; % duration of the longest trial
 t.trialDurLongest = t.trialDur + t.startTime;
 
 jit = 0:0.2:1;
@@ -235,7 +235,7 @@ for n = 1:p.numTrials
 end
 
 %% WINDOW SETUP
-[window,rect] = Screen('OpenWindow', max(screens), p.grey);
+[window,rect] = Screen('OpenWindow', screens(2), p.grey,[],[],[],[],8);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
 load('linearizedCLUT.mat');
 Screen('LoadNormalizedGammaTable', window, linearizedCLUT);
@@ -376,12 +376,11 @@ for nTrial = 1:p.numTrials
         WaitSecs(t.startTime);
     end
     
-    % Draw surroundStimulus if not baseline condition
-    if p.trialEvents(nTrial,1) ~= 3
-        Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,end))
-        Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
-        %Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize)
-    end
+    % Draw surroundStimulus before target if not baseline condition
+%     if p.trialEvents(nTrial,1) ~= 3
+%         Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,end))
+%         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
+%     end
     
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
@@ -394,11 +393,10 @@ for nTrial = 1:p.numTrials
     Screen('DrawTexture', window, centerMask, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,end-1))
     Screen('DrawTexture', window, centerStimulus1(nTrial), [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,end-1))
     
-    % Draw surroundStimulus if not baseline condition
+    % Draw surroundStimulus during target if not baseline condition
     if p.trialEvents(nTrial,1) ~= 3 
         Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,end))
         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
-        %Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize)
     end
     
     % Draw Fixation
@@ -409,17 +407,16 @@ for nTrial = 1:p.numTrials
     % Stim duration
     WaitSecs(t.targetDur);
     
-    % Draw surroundStimulus if not baseline condition
-    if p.trialEvents(nTrial,1) ~= 3
-        Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,end))
-        Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
-        %Screen('FillOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize)    
-    end
-     
+    % Draw surroundStimulus after target if not baseline condition
+%     if p.trialEvents(nTrial,1) ~= 3
+%         Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,end))
+%         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
+%     end
+%      
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     Screen('Flip', window);
-    WaitSecs(t.targetLeadTime);
+    WaitSecs(t.responseLeadTime);
     
     % Set up button press
     PsychHID('KbQueueStart', deviceNumber);
