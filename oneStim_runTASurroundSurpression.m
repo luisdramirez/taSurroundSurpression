@@ -19,9 +19,9 @@ KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
-p.subject = 'Pilot';
-p.runNumber = 1;
-p.numBlocks = 2; % has to be a multiple of 2 unique repetitions per run
+p.subject = 'Pre-Pilot';
+% p.runNumber = 1;
+p.numBlocks = 10; % has to be a multiple of 2 unique repetitions per run
 p.numBreaks = p.numBlocks*2;
 
 usePowerMate = 'Yes';
@@ -73,9 +73,9 @@ t.timeStamp = datestr(now,'HHMM'); % Timestamp
 cd(dataDir);
 if exist(['vTA_surrSuppressionOneStim_', p.subject, '.mat'],'file') ~= 0
     load(['vTA_surrSuppressionOneStim_', p.subject, '.mat']);
-    runNumber = length(theData)+1;
+    p.runNumber = length(theData)+1;
 else
-    runNumber = 1;
+    p.runNumber = 1;
 end
 cd(expDir);
 
@@ -159,7 +159,7 @@ p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
 
 
 %% TIMING PARAMETERS
-t.targetDur = 6/60; % nFramesPerTarget/refrate (s) max = 12
+t.targetDur = 60/60; % nFramesPerTarget/refrate (s) max = 12
 t.targetLeadTime = 1; % (s)
 t.retention = 0.8; % (s)
 t.feedbackDur = 0.3; % (s)
@@ -237,8 +237,8 @@ end
 %% WINDOW SETUP
 [window,rect] = Screen('OpenWindow', screens(2), p.grey);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
-% load('MyGammaTable.mat');
-% Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
+load('MyGammaTable.mat');
+Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
 HideCursor;
 white = 255; green = [0 255 0];
 
