@@ -19,7 +19,7 @@ KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
-p.subject = 'Pre-Pilot';
+p.subject = 'Pre-Pilot_LR';
 % p.runNumber = 1;
 p.numBlocks = 10; % has to be a multiple of 2 unique repetitions per run
 p.numBreaks = p.numBlocks*2;
@@ -98,7 +98,7 @@ p.numContrasts = 4; % 4 for piloting
 p.minContrast = 0.1;
 p.maxContrast = 0.75;
 p.t1Contrasts = 10.^linspace(log10(p.minContrast),log10(p.maxContrast),p.numContrasts);
-p.surroundContrast = 0.75; 
+p.surroundContrast = 1; 
 
 % size parameters
 p.centerSize = round(1 * p.pixPerDeg);
@@ -159,7 +159,7 @@ p.probeContrast = randsample(0.1:0.01:0.9, p.numTrials, true);
 
 
 %% TIMING PARAMETERS
-t.targetDur = 30/60; % nFramesPerTarget/refrate (s) max = 12
+t.targetDur = 60/60; % nFramesPerTarget/refrate (s) max = 12
 t.targetLeadTime = 1; % (s)
 t.retention = 0.8; % (s)
 t.feedbackDur = 0.3; % (s)

@@ -1,7 +1,7 @@
 %%% analyzeSurroundSurpression
 function analyzeSurroundSurpression(subject, runNumber)
 
-subject = 'Pilot';
+subject = 'Pre-Pilot_LR';
 runNumber = 1;
 
 plotData = 'Yes';
@@ -40,29 +40,44 @@ collContrastAvg = zeros(1,length(targetContrasts));
 orthContrastAvg = zeros(1,length(targetContrasts));
 baseContrastAvg = zeros(1,length(targetContrasts));
 
+collContrastSTD = zeros(1,length(targetContrasts));
+orthContrastSTD = zeros(1,length(targetContrasts));
+baseContrastSTD = zeros(1,length(targetContrasts));
+
 % Organize averages by contrast
 for nContrast = 1:length(targetContrasts)
-   collContrastsAvg(nContrast) = mean(collTrials(collTrials(:,2)==targetContrasts(nContrast),3));
-   orthContrastsAvg(nContrast) = mean(orthTrials(orthTrials(:,2)==targetContrasts(nContrast),3)); 
-   basedContrastsAvg(nContrast) = mean(baseTrials(baseTrials(:,2)==targetContrasts(nContrast),3)); 
+   collContrastAvg(nContrast) = mean(collTrials(collTrials(:,2)==targetContrasts(nContrast),3));
+   orthContrastAvg(nContrast) = mean(orthTrials(orthTrials(:,2)==targetContrasts(nContrast),3)); 
+   baseContrastAvg(nContrast) = mean(baseTrials(baseTrials(:,2)==targetContrasts(nContrast),3)); 
+   
+   collContrastSTD(nContrast) = std(collTrials(collTrials(:,2)==targetContrasts(nContrast),3));
+   orthContrastSTD(nContrast) = std(orthTrials(orthTrials(:,2)==targetContrasts(nContrast),3));
+   baseContrastSTD(nContrast) = std(baseTrials(baseTrials(:,2)==targetContrasts(nContrast),3));
+
 end
 
-contrastAvgs = [collContrastsAvg; orthContrastsAvg; basedContrastsAvg];
+contrastAvgs = [collContrastAvg; orthContrastAvg; baseContrastAvg];
 
 %% PLOT DATA
 if strcmp(plotData, 'Yes')
-     
-    plot(targetContrasts, contrastAvgs(1,:))
-    hold on
-    plot(targetContrasts, contrastAvgs(2,:))
-    plot(targetContrasts, contrastAvgs(3,:))
-    plot(0:0.1:1,0:0.1:1)
+    figure  
+%     plot(targetContrasts, contrastAvgs(1,:)) %colinear data
+
+%     plot(targetContrasts, contrastAvgs(2,:)) %orthogonal data
+%     plot(targetContrasts, contrastAvgs(3,:)) %baseline data
     title('contrast vs. perceived contrast')
-    legend('coll','ortho','base')
     xlabel('contrasts')
     ylabel('perceived contrast')
 %     axis square
     ylim([0 1])
+    errorbar(targetContrasts, contrastAvgs(1,:), collContrastSTD) %colinear error
+    hold on
+    errorbar(targetContrasts, contrastAvgs(2,:), orthContrastSTD) %orthogonal error
+    errorbar(targetContrasts, contrastAvgs(3,:), baseContrastSTD) %baseline error
+    legend('coll','ortho','base')
+    plot(0:0.1:1,0:0.1:1)
+
+
     
 end
 %%
