@@ -1,6 +1,8 @@
 %%% analyzeSurroundSurpression
 function [rawData] = analyzeSurroundSurpression(subject, runNumber)
 
+subject = 'Pre-Pilot';
+runNumber = 1;
 
 plotData = 'Yes';
 

@@ -1,5 +1,5 @@
 %%% analyzeSurroundSurpression
-function [rawData] = analyzeSurroundSurpression(subject, runNumber)
+function analyzeSurroundSurpression(subject, runNumber)
 
 subject = 'Pilot';
 runNumber = 1;
@@ -61,7 +61,7 @@ if strcmp(plotData, 'Yes')
     legend('coll','ortho','base')
     xlabel('contrasts')
     ylabel('perceived contrast')
-    axis square
+%     axis square
     ylim([0 1])
     
 end

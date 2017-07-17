@@ -20,7 +20,7 @@ Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
 p.subject = 'Pre-Pilot';
-p.runNumber = 1;
+% p.runNumber = 1;
 p.numBlocks = 2; % has to be a multiple of 2 unique repetitions per run
 % p.numBreaks = p.numBlocks*2;
 
@@ -329,8 +329,8 @@ end
 %% WINDOW SETUP
 [window,rect] = Screen('OpenWindow', screens(1), p.grey);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
-% load('MyGammaTable.mat');
-% Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
+load('MyGammaTable.mat');
+Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
 HideCursor;
 white = 255; green = [0 255 0];
 
