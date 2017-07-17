@@ -20,8 +20,7 @@ Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
 p.subject = 'Pre-Pilot_LR';
-% p.runNumber = 1;
-p.numBlocks = 1; 
+p.numBlocks = 2; 
 p.numBreaks = p.numBlocks*2;
 
 usePowerMate = 'Yes';
@@ -139,7 +138,7 @@ p.innerFixation = p.outerFixation/1.5;
 
 p.trialEvents = [F1, F2, F3];
 
-p.numTrialsPerConfig = length(find(p.trialEvents(:,1) == 1));
+p.numTrialsPerConfig = sum(p.trialEvents(:,1) == 1);
 % p.numBaselineTrials = p.numTrialsPerConfig/2;
 
 % baselineConditions = repmat(5:6, [p.numBaselineTrials, 1]);
@@ -152,7 +151,6 @@ p.numTrialsPerConfig = length(find(p.trialEvents(:,1) == 1));
 p.numTrials = size(p.trialEvents,1);
 p.numTrialsPerBreak = p.numTrials/p.numBreaks;
 p.numTrialsPerBlock = p.numTrials/p.numBlocks;
-
 
 % every trial should be a random orientation; 
 p.targetsOrientation = randsample(1:180, p.numTrials, true); % each target has the same orientation
@@ -327,7 +325,7 @@ for n = 1:p.numTrials
 end
 
 %% WINDOW SETUP
-[window,rect] = Screen('OpenWindow', screens(2), p.grey,[],[],[],[],8);
+[window,rect] = Screen('OpenWindow', screens(2), p.grey,[],[],[],[],16);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
 % load('MyGammaTable.mat');
 % Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
