@@ -117,7 +117,7 @@ p.minContrast = 0.1;
 p.maxContrast = 0.75;
 p.t1Contrasts = 10.^linspace(log10(p.minContrast),log10(p.maxContrast),p.numContrasts);
 p.t2Contrasts = p.t1Contrasts;
-p.surroundContrast = 0.75; 
+p.surroundContrast = 1; 
 
 % size parameters
 p.centerSize = round(1 * p.pixPerDeg);
