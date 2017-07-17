@@ -21,7 +21,7 @@ Screen('Preference', 'SkipSyncTests', 0);
 % Subject name and run number
 p.subject = 'Pilot';
 p.runNumber = 1;
-p.numBlocks = 2; % has to be a multiple of 2 unique repetitions per run
+p.numBlocks = 10; % has to be a multiple of 2 unique repetitions per run
 p.numBreaks = p.numBlocks*2;
 
 usePowerMate = 'Yes';
@@ -46,8 +46,8 @@ end
 deviceNumber = 0;
 [keyBoardIndices, productNames] = GetKeyboardIndices;
 
-deviceString = 'Corsair Corsair K95W Gaming Keyboard';
-% deviceString = 'Apple Inc. Apple Keyboard';
+% deviceString = 'Corsarir Corsair K95W Gaming Keyboard';
+deviceString = 'Apple Inc. Apple Keyboard';
 % deviceString = 'Apple Keyboard';
 % deviceString = 'CHICONY USB Keyboard';
 % deviceString = 'Apple Internal Keyboard / Trackpad';
@@ -83,8 +83,8 @@ cd(expDir);
 %% SCREEN PARAMETERS
 screens = Screen('Screens'); % look at available screens
 p.screenWidthPixels = Screen('Rect', screens(1));
-screenWidth = 36; % 29 cm macbook air, 40 cm trinitron crt, 60 cm Qnix screen
-viewDistance = 68; % in cm, ideal distance: 1 cm equals 1 visual degree
+screenWidth = 42; % 29 cm macbook air, 40 cm trinitron crt, 60 cm Qnix screen
+viewDistance = 128; % in cm, ideal distance: 1 cm equals 1 visual degree
 visAngle = (2*atan2(screenWidth/2, viewDistance))*(180/pi); % Visual angle of the whole screen
 p.pixPerDeg = round(p.screenWidthPixels(3)/visAngle); % pixels per degree visual angle
 p.grey = 128;
@@ -166,7 +166,7 @@ t.feedbackDur = 0.3; % (s)
 t.iti = 1; % (s)
 t.startTime = 2; % (s)
 t.responseTime = []; % (s)
-t.trialDur = t.targetDur*2 + t.retention; % duration of the longest trial
+t.trialDur = t.targetLeadTime*2 + t.targetDur; % duration of the longest trial
 t.trialDurLongest = t.trialDur + t.startTime;
 
 jit = 0:0.2:1;
@@ -235,7 +235,7 @@ for n = 1:p.numTrials
 end
 
 %% WINDOW SETUP
-[window,rect] = Screen('OpenWindow', screens(2), p.grey);
+[window,rect] = Screen('OpenWindow', max(screens), p.grey);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
 % load('MyGammaTable.mat');
 % Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));

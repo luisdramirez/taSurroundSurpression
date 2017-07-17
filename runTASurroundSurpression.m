@@ -19,7 +19,7 @@ KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
-p.subject = 'Pilot';
+p.subject = 'Pre-Pilot';
 p.runNumber = 1;
 p.numBlocks = 2; % has to be a multiple of 2 unique repetitions per run
 % p.numBreaks = p.numBlocks*2;
@@ -45,14 +45,8 @@ end
 % Check which devicenumber the keyboard is assigned to
 deviceNumber = 0;
 [keyBoardIndices, productNames] = GetKeyboardIndices;
-<<<<<<< HEAD
 % deviceString = 'Corsair Corsair K95W Gaming Keyboard';
 deviceString = 'Apple Inc. Apple Keyboard';
-=======
-
-deviceString = 'Corsair Corsair K95W Gaming Keyboard';
-% deviceString = 'Apple Inc. Apple Keyboard';
->>>>>>> f12b156bebbaa0c7cd1c14ac1e748138e1d5073e
 % deviceString = 'Apple Keyboard';
 % deviceString = 'CHICONY USB Keyboard';
 % deviceString = 'Apple Internal Keyboard / Trackpad';
@@ -88,8 +82,8 @@ cd(expDir);
 %% SCREEN PARAMETERS
 screens = Screen('Screens'); % look at available screens
 p.screenWidthPixels = Screen('Rect', screens(1));
-screenWidth = 36; % 29 cm macbook air, 40 cm trinitron crt, 60 cm Qnix screen
-viewDistance = 68; % in cm, ideal distance: 1 cm equals 1 visual degree
+screenWidth = 42; % 29 cm macbook air, 40 cm trinitron crt, 60 cm Qnix screen
+viewDistance = 128; % in cm, ideal distance: 1 cm equals 1 visual degree
 visAngle = (2*atan2(screenWidth/2, viewDistance))*(180/pi); % Visual angle of the whole screen
 p.pixPerDeg = round(p.screenWidthPixels(3)/visAngle); % pixels per degree visual angle
 p.grey = 128;
@@ -118,11 +112,7 @@ p.stimConfigurations = [1 2 3 4 5 6]; % [5 6] are baseline (no surround)
 p.stimConfigurationsNames = {'colinearT1cued' 'colinearT2cued' 'orthogonalT1cued' 'orthogonalT2cued' 'baselineT1cued' 'baseline T2cued'};
 
 % contrast parameters
-<<<<<<< HEAD
-p.numContrasts = 1;
-=======
-p.numContrasts = 1; % 4 for piloting
->>>>>>> f12b156bebbaa0c7cd1c14ac1e748138e1d5073e
+p.numContrasts = 4; % 4 for piloting
 p.minContrast = 0.1;
 p.maxContrast = 0.75;
 p.t1Contrasts = 10.^linspace(log10(p.minContrast),log10(p.maxContrast),p.numContrasts);
