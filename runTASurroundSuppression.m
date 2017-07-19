@@ -107,7 +107,7 @@ end
 
 
 %% GRATING PARAMETERS
-p.stimConfigurations = [1 2 3 4 5 6]; % [5 6] are baseline (no surround)
+p.stimConfigurations = [1 2 3 4 5 6]; 
 p.stimConfigurationsNames = {'colinearT1cued' 'colinearT2cued' 'orthogonalT1cued' 'orthogonalT2cued' 'baselineT1cued' 'baseline T2cued'};
 
 % contrast parameters
@@ -241,7 +241,7 @@ t.responseTime = []; % (s)
 t.cueTargetSOA = 1; % (s)
 t.cueLeadTime = 1; %(s)
 t.responseLeadTime = 1; % (s)
-t.trialDur = t.cueLeadTime + t.cueDur + t.targetSOA + t.cueTargetSOA*2 + t.targetDur*2 + t.responseLeadTime; % duration of the longest trial
+t.trialDur = t.cueLeadTime + t.targetSOA + t.cueTargetSOA*2 + t.targetDur*2 + t.responseLeadTime; % duration of the longest trial
 t.trialDurLongest = t.trialDur + t.startTime;
 
 jit = 0:0.2:1;
@@ -693,7 +693,7 @@ for nTrial = 1:p.numTrials
 
                     startAngle = angle;
                 end
-                if pmButton == 1;
+                if pmButton == 1
                     data.estimatedContrast(nTrial) = estContrast;
                     if mod(p.trialEvents(nTrial,1),2) ~= 0 % if odd, subtract from t1contrast
                         data.differenceContrast(nTrial) = p.trialEvents(nTrial,2) - data.estimatedContrast(nTrial);
@@ -758,7 +758,26 @@ for nTrial = 1:p.numTrials
     WaitSecs(t.iti);
  
     %%% Rest period
-    if  nTrial == p.numTrialsPerBlock*nBlock
+    if nTrial == p.numTrialsPerBreak*nBreak && nTrial ~= p.numTrialsPerBlock*nBlock
+        rest = GetSecs;
+        
+        restText = 'You can take a short break now, or press the dial to continue.';
+        DrawFormattedText(window, restText, 'center', 'center', white);
+        Screen('Flip', window);
+        
+        nBreak = nBreak+1; 
+        
+        pmButtonBreak = 0;
+        
+        while 1
+            [pmButtonBreak, a] = PsychPowerMate('Get', powermate);
+            if pmButtonBreak == 1
+                break;
+            end
+        end
+        
+        t.restTime = (GetSecs-rest)/60;         
+    elseif nTrial == p.numTrialsPerBlock*nBlock
         rest = GetSecs;
         
         restText = ['Block ' num2str(nBlock) ' of ' num2str(p.numBlocks) ' completed! You can take a short break now, ' '' '\n' ...
@@ -766,19 +785,20 @@ for nTrial = 1:p.numTrials
         DrawFormattedText(window, restText, 'center', 'center', white);
         Screen('Flip', window);
         
-        nBlock = nBlock+1; 
+        nBlock = nBlock+1;
+        nBreak = nBreak+1; 
         
         pmButtonBreak = 0;
         
         while 1
             [pmButtonBreak, a] = PsychPowerMate('Get', powermate);
-            if pmButtonBreak == 1;
+            if pmButtonBreak == 1
                 break;
             end
         end
         
         t.restTime = (GetSecs-rest)/60;      
-    end
+    end 
  
     
 end
