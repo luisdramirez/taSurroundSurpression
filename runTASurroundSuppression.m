@@ -759,7 +759,26 @@ for nTrial = 1:p.numTrials
     WaitSecs(t.iti);
  
     %%% Rest period
-    if  nTrial == p.numTrialsPerBlock*nBlock
+    if nTrial == p.numTrialsPerBreak*nBreak && nTrial ~= p.numTrialsPerBlock*nBlock
+        rest = GetSecs;
+        
+        restText = 'You can take a short break now, or press the dial to continue.';
+        DrawFormattedText(window, restText, 'center', 'center', white);
+        Screen('Flip', window);
+        
+        nBreak = nBreak+1; 
+        
+        pmButtonBreak = 0;
+        
+        while 1
+            [pmButtonBreak, a] = PsychPowerMate('Get', powermate);
+            if pmButtonBreak == 1
+                break;
+            end
+        end
+        
+        t.restTime = (GetSecs-rest)/60;         
+    elseif nTrial == p.numTrialsPerBlock*nBlock
         rest = GetSecs;
         
         restText = ['Block ' num2str(nBlock) ' of ' num2str(p.numBlocks) ' completed! You can take a short break now, ' '' '\n' ...
@@ -767,19 +786,20 @@ for nTrial = 1:p.numTrials
         DrawFormattedText(window, restText, 'center', 'center', white);
         Screen('Flip', window);
         
-        nBlock = nBlock+1; 
+        nBlock = nBlock+1;
+        nBreak = nBreak+1; 
         
         pmButtonBreak = 0;
         
         while 1
             [pmButtonBreak, a] = PsychPowerMate('Get', powermate);
-            if pmButtonBreak == 1;
+            if pmButtonBreak == 1
                 break;
             end
         end
         
         t.restTime = (GetSecs-rest)/60;      
-    end
+    end 
  
     
 end

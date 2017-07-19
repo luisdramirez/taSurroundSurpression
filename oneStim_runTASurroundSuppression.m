@@ -528,7 +528,7 @@ for nTrial = 1:p.numTrials
     if nTrial == p.numTrialsPerBreak*nBreak && nTrial ~= p.numTrialsPerBlock*nBlock
         rest = GetSecs;
         
-        restText = ['You can take a short break now, or press the dial to continue.'];
+        restText = 'You can take a short break now, or press the dial to continue.';
         DrawFormattedText(window, restText, 'center', 'center', white);
         Screen('Flip', window);
         
@@ -538,7 +538,7 @@ for nTrial = 1:p.numTrials
         
         while 1
             [pmButtonBreak, a] = PsychPowerMate('Get', powermate);
-            if pmButtonBreak == 1;
+            if pmButtonBreak == 1
                 break;
             end
         end
@@ -559,7 +559,7 @@ for nTrial = 1:p.numTrials
         
         while 1
             [pmButtonBreak, a] = PsychPowerMate('Get', powermate);
-            if pmButtonBreak == 1;
+            if pmButtonBreak == 1
                 break;
             end
         end
