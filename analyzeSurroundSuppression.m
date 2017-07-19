@@ -1,7 +1,7 @@
 %%% analyzeSurroundSurpression
 function [rawData] = analyzeSurroundSurpression(subject)
 
-subject = 'Pilot';
+subject = 'Pre-Pilot_LR';
 
 plotData = 'Yes';
 
@@ -179,10 +179,6 @@ baseInvalidCuedContrastSTE = baseInvalidCuedContrastsSTD/sqrt(length(baseInvalid
 %% PLOT DATA
 if strcmp(plotData, 'Yes')
      
-%     plot(targetContrasts, validContrastAvgs(1,:))
-%     hold on
-%     plot(targetContrasts, validContrastAvgs(2,:))
-%     plot(targetContrasts, validContrastAvgs(3,:))
     errorbar(targetContrasts, validContrastAvgs(1,:),collValidCuedContrastSTE) %collinear valid data w/ error
     hold on
     errorbar(targetContrasts, validContrastAvgs(2,:),orthValidCuedContrastSTE) %orthogonal valid data w/ error
@@ -192,15 +188,12 @@ if strcmp(plotData, 'Yes')
     legend('coll','ortho','base','unity')
     xlabel('contrasts')
     ylabel('perceived contrast')
-%     axis square
+    axis square
     ylim([0 1])
     
     
+    
     figure
-%     plot(targetContrasts, invalidContrastAvgs(1,:))
-%     hold on
-%     plot(targetContrasts, invalidContrastAvgs(2,:))
-%     plot(targetContrasts(~isnan(invalidContrastAvgs(3,:))), invalidContrastAvgs(~isnan(invalidContrastAvgs(3,:))))
     errorbar(targetContrasts, invalidContrastAvgs(1,:),collInvalidCuedContrastSTE)  %collinear invalid data w/ error
     hold on
     errorbar(targetContrasts, invalidContrastAvgs(2,:),orthInvalidCuedContrastSTE) %orthogonal invalid data w/ error
@@ -210,8 +203,49 @@ if strcmp(plotData, 'Yes')
     legend('coll','ortho','base','unity')
     xlabel('contrasts')
     ylabel('perceived contrast')
-%     axis square
-    ylim([0 1]) 
+    axis square
+    ylim([0 1])
+    
+    % colinear valid v invalid
+    figure
+    errorbar(targetContrasts, validContrastAvgs(1,:),collValidCuedContrastSTE) %collinear valid data w/ error
+    hold on
+    errorbar(targetContrasts, invalidContrastAvgs(1,:),collInvalidCuedContrastSTE)  %collinear invalid data w/ error
+    plot(0:0.1:1,0:0.1:1)
+    title('collinear valid v invalid')
+    legend('valid','invalid','unity')
+    xlabel('contrast')
+    ylabel('perceived contrast')
+    axis square
+    ylim([0 1])
+    
+    % orthogonal valid v invalid
+    figure
+    errorbar(targetContrasts, validContrastAvgs(2,:),orthValidCuedContrastSTE) %orthogonal valid data w/ error
+    hold on
+    errorbar(targetContrasts, invalidContrastAvgs(2,:),orthInvalidCuedContrastSTE) %orthogonal invalid data w/ error
+    plot(0:0.1:1,0:0.1:1)
+    title('orthogonal valid v invalid')
+    legend('valid','invalid','unity')
+    xlabel('contrast')
+    ylabel('perceived contrast')
+    axis square
+    ylim([0 1])
+    
+    % baseline valid v invalid   
+    figure
+    errorbar(targetContrasts, validContrastAvgs(3,:),baseValidCuedContrastSTE) %baseline valid data w/ error
+    hold on
+    errorbar(targetContrasts, invalidContrastAvgs(3,:),baseInvalidCuedContrastSTE) %baseline invalid data w/ error
+    plot(0:0.1:1,0:0.1:1)
+    title('baseline valid v invalid')
+    legend('valid','invalid','unity')
+    xlabel('contrast')
+    ylabel('perceived contrast')
+    axis square
+    ylim([0 1])
+       
+    
 end
 
 cd(expDir)
