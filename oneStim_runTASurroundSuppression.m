@@ -20,12 +20,7 @@ Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
 p.subject = 'Pre-Pilot_YW';
-% p.runNumber = 1;
-<<<<<<< HEAD:oneStim_runTASurroundSurpression.m
 p.numBlocks = 10; % has to be a multiple of 2 unique repetitions per run
-=======
-p.numBlocks = 2;
->>>>>>> 604a91beb1c380c0047b34e436a8ff4eac549a48:oneStim_runTASurroundSuppression.m
 p.numBreaks = p.numBlocks*2;
 
 usePowerMate = 'Yes';

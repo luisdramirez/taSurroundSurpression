@@ -19,16 +19,9 @@ KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
-<<<<<<< HEAD:runTASurroundSurpression.m
-p.subject = 'Pre-Pilot';
-% p.runNumber = 1;
-p.numBlocks = 2; % has to be a multiple of 2 unique repetitions per run
-% p.numBreaks = p.numBlocks*2;
-=======
 p.subject = 'Pre-Pilot_LR';
 p.numBlocks = 2; 
 p.numBreaks = p.numBlocks*2;
->>>>>>> 604a91beb1c380c0047b34e436a8ff4eac549a48:runTASurroundSuppression.m
 
 usePowerMate = 'Yes';
 useEyeTracker = 'No';
@@ -331,14 +324,10 @@ for n = 1:p.numTrials
 end
 
 %% WINDOW SETUP
-<<<<<<< HEAD:runTASurroundSurpression.m
-[window,rect] = Screen('OpenWindow', screens(1), p.grey);
-=======
-[window,rect] = Screen('OpenWindow', screens(2), p.grey,[],[],[],[],16);
->>>>>>> 604a91beb1c380c0047b34e436a8ff4eac549a48:runTASurroundSuppression.m
+[window,rect] = Screen('OpenWindow', max(screens), p.grey,[],[],[],[],16);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
-% load('MyGammaTable.mat');
-% Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
+load('MyGammaTable.mat');
+Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
 HideCursor;
 white = 255; green = [0 255 0];
 

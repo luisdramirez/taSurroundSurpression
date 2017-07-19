@@ -1,7 +1,7 @@
 %%% analyzeSurroundSurpression
 function [rawData] = analyzeSurroundSurpression(subject)
 
-subject = 'Pilot';
+subject = 'Pre-Pilot_LR';
 
 plotData = 'Yes';
 
