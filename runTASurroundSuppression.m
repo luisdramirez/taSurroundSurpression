@@ -122,7 +122,7 @@ p.surroundContrast = 1;
 % size parameters
 p.centerSize = round(1 * p.pixPerDeg);
 p.surroundSize = p.centerSize * 4;
-p.gapSize = round(0.01 * p.pixPerDeg);
+p.gapSize = round(0.02 * p.pixPerDeg);
 p.outerFixation = round(0.05 * p.pixPerDeg);
 p.innerFixation = p.outerFixation/1.5;
 
@@ -531,7 +531,7 @@ for nTrial = 1:p.numTrials
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     t1Time = Screen('Flip', window);
-%     GetClicks;
+    GetClicks;
     trialTimes(nTrial,3) = t1Time - expStart;
     
     % T1 Trigger
@@ -578,7 +578,7 @@ for nTrial = 1:p.numTrials
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     t2Time = Screen('Flip', window);
-%     GetClicks;
+    GetClicks;
     trialTimes(nTrial,4) = t2Time - expStart;
     
     % T2 Trigger
