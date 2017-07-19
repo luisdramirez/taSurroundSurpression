@@ -56,6 +56,7 @@ collInvalidTrials = collTrials(collTrials(:,2)==2,:);
 orthInvalidTrials = orthTrials(orthTrials(:,2)==2,:);
 baseInvalidTrials = baseTrials(baseTrials(:,2)==2,:);
 
+% Separate data by contrasts for each condition
 collValidCuedContrasts = nan(length(collValidTrials),2); % [targetContrast estimatedContrast]
 collValidCuedContrastsAvg = zeros(1,length(targetContrasts));
 collValidCuedContrastsSTD = zeros(1,length(targetContrasts));
@@ -66,12 +67,9 @@ for nTrial = 1:length(collValidTrials)
         collValidCuedContrasts(nTrial,2) = collValidTrials(nTrial,5);      
     elseif collValidTrials(nTrial,1) == 2 % grab t2 contrast and report
         collValidCuedContrasts(nTrial,1) = collValidTrials(nTrial,4);
-        collValidCuedContrasts(nTrial,2) = collValidTrials(nTrial,5);
-        
-        
+        collValidCuedContrasts(nTrial,2) = collValidTrials(nTrial,5);     
     end 
 end
-
 
 orthValidCuedContrasts = nan(length(orthValidTrials),2);
 orthValidCuedContrastsAvg = zeros(1,length(targetContrasts));
