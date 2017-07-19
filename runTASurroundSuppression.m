@@ -432,6 +432,7 @@ if strcmp(useEyeTracker, 'Yes')
 end
 
 nBlock = 1;
+nBreak = 1;
 trialTimes = zeros(p.numTrials,6); % [startTrial preCueTime t1Time t2Time postCueTime endTrial]
 
 triggersBase = 1:6;
