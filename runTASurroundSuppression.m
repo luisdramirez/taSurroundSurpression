@@ -121,7 +121,7 @@ p.surroundContrast = 1;
 % size parameters
 p.centerSize = round(1 * p.pixPerDeg);
 p.surroundSize = p.centerSize * 4;
-p.gapSize = round(0.01 * p.pixPerDeg);
+p.gapSize = round(0.02 * p.pixPerDeg);
 p.outerFixation = round(0.05 * p.pixPerDeg);
 p.innerFixation = p.outerFixation/1.5;
 
@@ -206,7 +206,8 @@ trial_cueDistrib(:,end+1) = sum(trial_cueDistrib,2);
 trial_cueDistrib
 
 p.trialEvents % [stimConfiguration, t1Contrast, t2Contrast, targOrientation, surrOrientation, cueValidity]
-p.trialEvents = Shuffle(p.trialEvents,2); 
+p.trialEvents = Shuffle(p.trialEvents,2);
+p.trialEvents
 
 % Define parameters for the stimulus
 freq = 2;
@@ -529,6 +530,7 @@ for nTrial = 1:p.numTrials
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     t1Time = Screen('Flip', window);
+    GetClicks;
     trialTimes(nTrial,3) = t1Time - expStart;
     
     % T1 Trigger
@@ -564,7 +566,7 @@ for nTrial = 1:p.numTrials
    
     % Draw centerStimulus2
     Screen('DrawTexture', window, centerMask, [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
-    Screen('DrawTexture', window, centerStimulus2(n), [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
+    Screen('DrawTexture', window, centerStimulus2(nTrial), [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
     
     % Draw surroundStimulus if not baseline condition
     if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6  
@@ -575,6 +577,7 @@ for nTrial = 1:p.numTrials
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     t2Time = Screen('Flip', window);
+    GetClicks;
     trialTimes(nTrial,4) = t2Time - expStart;
     
     % T2 Trigger
