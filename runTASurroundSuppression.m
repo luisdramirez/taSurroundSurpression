@@ -19,7 +19,7 @@ KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
-p.subject = 'Pre-Pilot_LR';
+p.subject = 'Pre-Pilot_YW';
 p.numBlocks = 2; 
 p.numBreaks = p.numBlocks*2;
 
