@@ -193,6 +193,10 @@ for t1Contrast = 1:length(targetContrasts)
     end
 end
 
+for iContrast = 1:length(targetContrasts)
+    contrastMatrix1(iContrast,:) = contrastMatrix1(iContrast,:) / targetContrasts(iContrast); 
+end
+
 %% PLOT DATA
 if strcmp(plotData, 'Yes')
      
