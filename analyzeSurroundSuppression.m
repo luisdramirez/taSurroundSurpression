@@ -16,6 +16,7 @@ else
     error('Data file does not exist.')
 end
 
+stimConfigs = theData(runNumber).p.stimConfigurations;
 targetContrasts = theData(runNumber).p.t1Contrasts;
 estimatedContrast = theData(runNumber).data.estimatedContrast; %subject response
 differenceContrast = theData(runNumber).data.differenceContrast; %how far off from target
@@ -23,8 +24,8 @@ responseTime = theData(runNumber).data.responseTime;
 
 % [stimConfig cueValidity t1Contrast t2Contrast estimatedContrast differenceContrast targetOrientation]
 rawData = [theData(runNumber).p.trialEvents(:,1), theData(runNumber).p.trialEvents(:,end), theData(runNumber).p.trialEvents(:,2),...
-    theData(runNumber).p.trialEvents(:,3), theData(runNumber).data.estimatedContrast,...
-    theData(runNumber).data.differenceContrast theData(runNumber).p.trialEvents(:,4)];
+    theData(runNumber).p.trialEvents(:,3), estimatedContrast,...
+    differenceContrast theData(runNumber).p.trialEvents(:,4)];
 
 % Raw data separated into configurations [t1cued; t2cued]
 collTrialsIndx = [rawData(:,1) == 1 rawData(:,1) == 2]; 
@@ -174,6 +175,28 @@ orthInvalidCuedContrastSTE = orthInvalidCuedContrastsSTD/sqrt(length(orthInvalid
 baseInvalidCuedContrastSTE = baseInvalidCuedContrastsSTD/sqrt(length(baseInvalidTrials));
 
 
+contrastMatrix = nan(length(targetContrasts),length(targetContrasts),2,length(stimConfigs));
+
+for nConfig = 1:length(stimConfigs)
+    for nCue = 1:2   
+        for iContrast = 1:length(targetContrasts)     
+            for jContrast = 1:length(targetContrasts)
+                contrastMatrix(iContrast,jContrast,nCue,nConfig) = mean(rawData(rawData(:,1)==nConfig & rawData(:,2)==nCue & rawData(:,3)==targetContrasts(iContrast) & rawData(:,4)==targetContrasts(jContrast),5));
+            end
+        end
+   end
+end
+
+for t1Contrast = 1:length(targetContrasts)
+    for t2Contrast = 1:length(targetContrasts)
+        contrastMatrix1(t1Contrast,t2Contrast) = mean(rawData(rawData(:,1)==1 & rawData(:,2)==1 & rawData(:,3)==targetContrasts(t1Contrast) & rawData(:,4)==targetContrasts(t2Contrast),5));
+    end
+end
+
+for iContrast = 1:length(targetContrasts)
+    contrastMatrix1(iContrast,:) = contrastMatrix1(iContrast,:) / targetContrasts(iContrast); 
+end
+
 %% PLOT DATA
 if strcmp(plotData, 'Yes')
      
@@ -230,18 +253,28 @@ if strcmp(plotData, 'Yes')
     axis square
     ylim([0 1])
     
-    % baseline valid v invalid   
+    % no surround valid v invalid   
     figure
     errorbar(targetContrasts, validContrastAvgs(3,:),baseValidCuedContrastSTE) %baseline valid data w/ error
     hold on
     errorbar(targetContrasts, invalidContrastAvgs(3,:),baseInvalidCuedContrastSTE) %baseline invalid data w/ error
     plot(0:0.1:1,0:0.1:1)
-    title('baseline valid v invalid')
+    title('no surround valid v invalid')
     legend('valid','invalid','unity')
     xlabel('contrast')
     ylabel('perceived contrast')
     axis square
     ylim([0 1])
+    
+    
+    % plot contrast matrix (iContrast, jContrast, nCue, nConfig)
+    for nConfig = 1:length(stimConfigs)
+        for nCue = 1:2   
+            figure
+            heatmap(contrastMatrix(:,:,nCue,nConfig))
+        end
+    end
+
        
     
 end
