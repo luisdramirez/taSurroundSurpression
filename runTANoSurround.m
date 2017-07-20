@@ -19,10 +19,13 @@ KbName('UnifyKeyNames');
 Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
-p.subject = 'Pre-Pilot_LR';
+p.subject = 'Pre-Pilot-LR';
 p.cueValidity = 0.75; % cue validity
 [p.numValidTrialsPerComb, p.minNumBlocks] = rat(p.cueValidity);
-p.repetitions = 1;
+p.repetitions = 4;
+p.numInvalidTrialsPerComb = p.minNumBlocks - p.numValidTrialsPerComb;
+p.totalNumValidTrialsComb = p.numValidTrialsPerComb * p.repetitions;
+p.totalNumInvalidTrialsComb = p.numInvalidTrialsPerComb * p.repetitions;
 p.numBlocks = p.minNumBlocks*p.repetitions; 
 p.numBreaks = p.numBlocks*2; % 1 break per block, 1 break at end of block
 
@@ -48,8 +51,8 @@ end
 deviceNumber = 0;
 [keyBoardIndices, productNames] = GetKeyboardIndices;
 
-deviceString = 'Corsair Corsair K95W Gaming Keyboard';
-% deviceString = 'Apple Inc. Apple Keyboard';
+% deviceString = 'Corsair Corsair K95W Gaming Keyboard';
+deviceString = 'Apple Inc. Apple Keyboard';
 % deviceString = 'Apple Keyboard';
 % deviceString = 'CHICONY USB Keyboard';
 % deviceString = 'Apple Internal Keyboard / Trackpad';
@@ -85,8 +88,8 @@ cd(expDir);
 %% SCREEN PARAMETERS
 screens = Screen('Screens'); % look at available screens
 p.screenWidthPixels = Screen('Rect', screens(1));
-screenWidth = 36; % 29 cm macbook air, 40 cm trinitron crt, 60 cm Qnix screen
-viewDistance = 68; % in cm, ideal distance: 1 cm equals 1 visual degree
+screenWidth = 42; % 29 cm macbook air, 40 cm trinitron crt, 60 cm Qnix screen
+viewDistance = 128; % in cm, ideal distance: 1 cm equals 1 visual degree
 visAngle = (2*atan2(screenWidth/2, viewDistance))*(180/pi); % Visual angle of the whole screen
 p.pixPerDeg = round(p.screenWidthPixels(3)/visAngle); % pixels per degree visual angle
 p.grey = 128;
@@ -141,7 +144,7 @@ p.innerFixation = p.outerFixation/1.5;
 
 p.trialEvents = [F1, F2, F3]; %[stimConfiguration, t1Contrast, t2Contrast]
 
-p.numTrialsPerConfig = sum(p.trialEvents(:,1) == 1);
+p.numTrialsPerConfig = sum(p.trialEvents(:,1) == p.stimConfigurations(1));
 % p.numBaselineTrials = p.numTrialsPerConfig/2;
 
 % baselineConditions = repmat(5:6, [p.numBaselineTrials, 1]);
@@ -183,10 +186,10 @@ for nStimConfig = 1:length(p.stimConfigurations)
    for t1Contrast = 1:p.numContrasts
        for t2Contrast = 1:p.numContrasts
            contrastCombIndx = find(p.trialEvents(:,1)==p.stimConfigurations(nStimConfig) & p.trialEvents(:,2)==p.t1Contrasts(t1Contrast) & p.trialEvents(:,3)==p.t2Contrasts(t2Contrast));
-           for nValid = 1:p.numValidTrialsPerComb
+           for nValid = 1:p.numValidTrialsPerComb*p.repetitions
                trialCues(contrastCombIndx(nValid)) = 1;              
            end
-           for nInvalid = 1+p.numValidTrialsPerComb:p.numValidTrialsPerComb+(p.minNumBlocks-p.numValidTrialsPerComb)
+           for nInvalid = 1+(p.numValidTrialsPerComb*p.repetitions):p.numValidTrialsPerComb*p.repetitions+((p.minNumBlocks-p.numValidTrialsPerComb)*p.repetitions)
                trialCues(contrastCombIndx(nInvalid)) = 2;
            end
        end
@@ -336,10 +339,10 @@ for n = 1:p.numTrials
 end
 
 %% WINDOW SETUP
-[window,rect] = Screen('OpenWindow', screens(2), p.grey,[],[],[],[],16);
+[window,rect] = Screen('OpenWindow', max(screens), p.grey,[],[],[],[],16);
 OriginalCLUT = Screen('ReadNormalizedGammaTable', window);
-% load('MyGammaTable.mat');
-% Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
+load('MyGammaTable.mat');
+Screen('LoadNormalizedGammaTable', window, repmat(gammaTable, [1 3]));
 HideCursor;
 white = 255; green = [0 255 0];
 
@@ -541,7 +544,7 @@ for nTrial = 1:p.numTrials
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     t1Time = Screen('Flip', window);
-    GetClicks;
+%     GetClicks;
     trialTimes(nTrial,3) = t1Time - expStart;
     
     % T1 Trigger
@@ -588,7 +591,7 @@ for nTrial = 1:p.numTrials
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     t2Time = Screen('Flip', window);
-    GetClicks;
+%     GetClicks;
     trialTimes(nTrial,4) = t2Time - expStart;
     
     % T2 Trigger

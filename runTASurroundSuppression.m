@@ -182,10 +182,10 @@ for nStimConfig = 1:length(p.stimConfigurations)
    for t1Contrast = 1:p.numContrasts
        for t2Contrast = 1:p.numContrasts
            contrastCombIndx = find(p.trialEvents(:,1)==p.stimConfigurations(nStimConfig) & p.trialEvents(:,2)==p.t1Contrasts(t1Contrast) & p.trialEvents(:,3)==p.t2Contrasts(t2Contrast));
-           for nValid = 1:p.numValidTrialsPerComb
+           for nValid = 1:p.numValidTrialsPerComb*p.repetitions
                trialCues(contrastCombIndx(nValid)) = 1;              
            end
-           for nInvalid = 1+p.numValidTrialsPerComb:p.numValidTrialsPerComb+(p.minNumBlocks-p.numValidTrialsPerComb)
+           for nInvalid = 1+p.numValidTrialsPerComb*p.repetitions:(1+p.numValidTrialsPerComb*p.repetitions)+((p.minNumBlocks-p.numValidTrialsPerComb)*p.repetitions)
                trialCues(contrastCombIndx(nInvalid)) = 2;
            end
        end
