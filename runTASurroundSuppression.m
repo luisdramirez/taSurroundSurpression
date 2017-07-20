@@ -530,7 +530,7 @@ for nTrial = 1:p.numTrials
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     t1Time = Screen('Flip', window);
-    GetClicks;
+%     GetClicks;
     trialTimes(nTrial,3) = t1Time - expStart;
     
     % T1 Trigger
@@ -577,7 +577,7 @@ for nTrial = 1:p.numTrials
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
     t2Time = Screen('Flip', window);
-    GetClicks;
+%     GetClicks;
     trialTimes(nTrial,4) = t2Time - expStart;
     
     % T2 Trigger
