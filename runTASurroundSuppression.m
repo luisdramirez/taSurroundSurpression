@@ -20,7 +20,10 @@ Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
 p.subject = 'Pre-Pilot_LR';
-p.numBlocks = 2; 
+p.cueValidity = 0.75;
+[p.numValidTrialsPerComb, p.minNumBlocks] = rat(p.cueValidity);
+p.repetitions = 1;
+p.numBlocks = p.minNumBlocks*p.repetitions; 
 p.numBreaks = p.numBlocks*2;
 
 usePowerMate = 'Yes';
@@ -109,7 +112,7 @@ end
 
 %% GRATING PARAMETERS
 p.stimConfigurations = [1 2 3 4 5 6]; 
-p.stimConfigurationsNames = {'colinearT1cued' 'colinearT2cued' 'orthogonalT1cued' 'orthogonalT2cued' 'baselineT1cued' 'baseline T2cued'};
+p.stimConfigurationsNames = {'colinearT1cued' 'colinearT2cued' 'orthogonalT1cued' 'orthogonalT2cued' 'noSurroundT1cued' 'noSurroundT2cued'};
 
 % contrast parameters
 p.numContrasts = 4; % 4 for piloting
@@ -171,39 +174,46 @@ p.trialEvents(:, end+1:end+2) = whichOrientation;
 
 % Assign cue validity for each trial
 p.trialCuesNames = {'Valid' 'Invalid'};
-cueValidity = 0.75; % cue validity
 
 trialCues = zeros(p.numTrials,1);
 
+% assign cues to sets of unique combinations 
 for nStimConfig = 1:length(p.stimConfigurations)
-   configIndx = find(p.trialEvents(:,1)==nStimConfig); % find the index of the config in trialEvents
-   configIndxShuff = Shuffle(configIndx); %shuffle those indices
-   numConfig = length(configIndx); % # of trials of the config
-   numValids = floor(numConfig*cueValidity); % # of valid trials for the config
-   numInvalids = ceil(numConfig-numValids); % # of invalid trials for the config
-   
-   % assign valid and invalid cues 
-   for nValid = 1:numValids 
-      trialCues(configIndxShuff(nValid)) = 1; 
-   end
-   
-   for nInvalid = 1+numValids:numValids+numInvalids
-       trialCues(configIndxShuff(nInvalid)) = 2; 
+   for t1Contrast = 1:p.numContrasts
+       for t2Contrast = 1:p.numContrasts
+           contrastCombIndx = find(p.trialEvents(:,1)==p.stimConfigurations(nStimConfig) & p.trialEvents(:,2)==p.t1Contrasts(t1Contrast) & p.trialEvents(:,3)==p.t2Contrasts(t2Contrast));
+           for nValid = 1:p.numValidTrialsPerComb
+               trialCues(contrastCombIndx(nValid)) = 1;              
+           end
+           for nInvalid = 1+p.numValidTrialsPerComb:p.numValidTrialsPerComb+(p.minNumBlocks-p.numValidTrialsPerComb)
+               trialCues(contrastCombIndx(nInvalid)) = 2;
+           end
+       end
    end
 end
 
 p.trialEvents(:,end+1) = trialCues; % store trial cues at the end trialEvents
 
-% Check trial and cue distribution
-trial_cueDistrib = nan(length(p.trialCuesNames),length(p.stimConfigurations)); % [validity x stimConfig]
 
-for nCue = 1:length(p.trialCuesNames)
-    for nConfig = 1:length(p.stimConfigurations)
-        trial_cueDistrib(nCue,nConfig) = sum(p.trialEvents(:,1)==nConfig & p.trialEvents(:,end)==nCue);
+% Check trial and cue distribution
+trial_cueDistrib = nan(length(p.t1Contrasts), length(p.t2Contrasts), length(p.trialCuesNames), length(p.stimConfigurations)); % [t1 x t2 x validity x configuration]
+
+for nConfig = 1:length(p.stimConfigurations)
+    for nCue = 1:length(p.trialCuesNames)
+        for t1Contrast = 1:length(p.t1Contrasts)
+            for t2Contrast = 1:length(p.t2Contrasts)
+                if nCue == 1
+                    trial_cueDistrib(t1Contrast,t2Contrast,nCue,nConfig) = sum( p.trialEvents(p.trialEvents(:,1)==p.stimConfigurations(nConfig)...
+                    & p.trialEvents(:,2)==p.t1Contrasts(t1Contrast) & p.trialEvents(:,3)==p.t2Contrasts(t2Contrast),end) == nCue) == p.numValidTrialsPerComb*p.repetitions;
+                elseif nCue == 2
+                    trial_cueDistrib(t1Contrast,t2Contrast,nCue,nConfig) = sum( p.trialEvents(p.trialEvents(:,1)==p.stimConfigurations(nConfig)...
+                    & p.trialEvents(:,2)==p.t1Contrasts(t1Contrast) & p.trialEvents(:,3)==p.t2Contrasts(t2Contrast),end) == nCue) == (p.minNumBlocks - p.numValidTrialsPerComb)*p.repetitions;
+                end
+            end
+        end
     end
 end
 
-trial_cueDistrib(:,end+1) = sum(trial_cueDistrib,2);
 trial_cueDistrib
 
 p.trialEvents % [stimConfiguration, t1Contrast, t2Contrast, targOrientation, surrOrientation, cueValidity]

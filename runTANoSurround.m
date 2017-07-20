@@ -20,8 +20,11 @@ Screen('Preference', 'SkipSyncTests', 0);
 
 % Subject name and run number
 p.subject = 'Pre-Pilot_LR';
-p.numBlocks = 10; 
-p.numBreaks = p.numBlocks*2;
+p.cueValidity = 0.75; % cue validity
+[p.numValidTrialsPerComb, p.minNumBlocks] = rat(p.cueValidity);
+p.repetitions = 1;
+p.numBlocks = p.minNumBlocks*p.repetitions; 
+p.numBreaks = p.numBlocks*2; % 1 break per block, 1 break at end of block
 
 usePowerMate = 'Yes';
 useEyeTracker = 'No';
@@ -70,8 +73,8 @@ t.theDate = datestr(now,'yymmdd'); % Collect today's date
 t.timeStamp = datestr(now,'HHMM'); % Timestamp
 
 cd(dataDir);
-if exist(['vTA_surrSuppression_', p.subject, '.mat'],'file') ~= 0
-    load(['vTA_surrSuppression_', p.subject, '.mat']);
+if exist(['vTA_noSurround_', p.subject, '.mat'],'file') ~= 0
+    load(['vTA_noSurround_', p.subject, '.mat']);
     p.runNumber = length(theData)+1;
 else
     p.runNumber = 1;
@@ -109,7 +112,7 @@ end
 
 %% GRATING PARAMETERS
 p.stimConfigurations = [5 6]; 
-p.stimConfigurationsNames = {'baselineT1cued' 'baseline T2cued'};
+p.stimConfigurationsNames = {'noSurroundT1cued' 'noSurroundT2cued'};
 
 % contrast parameters
 p.numContrasts = 4; % 4 for piloting
@@ -136,7 +139,7 @@ p.innerFixation = p.outerFixation/1.5;
 
 [F1, F2, F3] = BalanceFactors(p.numBlocks, 0, p.stimConfigurations, p.t1Contrasts, p.t2Contrasts);
 
-p.trialEvents = [F1, F2, F3];
+p.trialEvents = [F1, F2, F3]; %[stimConfiguration, t1Contrast, t2Contrast]
 
 p.numTrialsPerConfig = sum(p.trialEvents(:,1) == 1);
 % p.numBaselineTrials = p.numTrialsPerConfig/2;
@@ -167,43 +170,50 @@ for n =1:p.numTrials
 end
 
 whichOrientation =  [p.targetsOrientation' p.surroundOrientation'];
-p.trialEvents(:, end+1:end+2) = whichOrientation;
+p.trialEvents(:, end+1:end+2) = whichOrientation; %[stimConfiguration, t1Contrast, t2Contrast, targOrientation, surrOrientation]
 
 % Assign cue validity for each trial
 p.trialCuesNames = {'Valid' 'Invalid'};
-cueValidity = 0.75; % cue validity
+
 
 trialCues = zeros(p.numTrials,1);
 
+% assign cues to sets of unique combinations 
 for nStimConfig = 1:length(p.stimConfigurations)
-   configIndx = find(p.trialEvents(:,1)==p.stimConfigurations(nStimConfig)); % find the index of the config in trialEvents
-   configIndxShuff = Shuffle(configIndx); %shuffle those indices
-   numConfigTrials = length(configIndx); % # of trials of the config
-   numValids = floor(numConfigTrials*cueValidity); % # of valid trials for the config
-   numInvalids = ceil(numConfigTrials-numValids); % # of invalid trials for the config
-   
-   % assign valid and invalid cues 
-   for nValid = 1:numValids 
-      trialCues(configIndxShuff(nValid)) = 1; 
-   end
-   
-   for nInvalid = 1+numValids:numValids+numInvalids
-       trialCues(configIndxShuff(nInvalid)) = 2; 
+   for t1Contrast = 1:p.numContrasts
+       for t2Contrast = 1:p.numContrasts
+           contrastCombIndx = find(p.trialEvents(:,1)==p.stimConfigurations(nStimConfig) & p.trialEvents(:,2)==p.t1Contrasts(t1Contrast) & p.trialEvents(:,3)==p.t2Contrasts(t2Contrast));
+           for nValid = 1:p.numValidTrialsPerComb
+               trialCues(contrastCombIndx(nValid)) = 1;              
+           end
+           for nInvalid = 1+p.numValidTrialsPerComb:p.numValidTrialsPerComb+(p.minNumBlocks-p.numValidTrialsPerComb)
+               trialCues(contrastCombIndx(nInvalid)) = 2;
+           end
+       end
    end
 end
 
 p.trialEvents(:,end+1) = trialCues; % store trial cues at the end trialEvents
 
 % Check trial and cue distribution
-trial_cueDistrib = nan(length(p.trialCuesNames),length(p.stimConfigurations)); % [validity x stimConfig]
+trial_cueDistrib = nan(length(p.t1Contrasts), length(p.t2Contrasts), length(p.trialCuesNames), length(p.stimConfigurations)); % [t1 x t2 x validity x configuration]
 
-for nCue = 1:length(p.trialCuesNames)
-    for nConfig = 1:length(p.stimConfigurations)
-        trial_cueDistrib(nCue,nConfig) = sum(p.trialEvents(:,1)==p.stimConfigurations(nConfig) & p.trialEvents(:,end)==nCue);
+for nConfig = 1:length(p.stimConfigurations)
+    for nCue = 1:length(p.trialCuesNames)
+        for t1Contrast = 1:length(p.t1Contrasts)
+            for t2Contrast = 1:length(p.t2Contrasts)
+                if nCue == 1
+                    trial_cueDistrib(t1Contrast,t2Contrast,nCue,nConfig) = sum( p.trialEvents(p.trialEvents(:,1)==p.stimConfigurations(nConfig)...
+                    & p.trialEvents(:,2)==p.t1Contrasts(t1Contrast) & p.trialEvents(:,3)==p.t2Contrasts(t2Contrast),end) == nCue) == p.numValidTrialsPerComb*p.repetitions;
+                elseif nCue == 2
+                    trial_cueDistrib(t1Contrast,t2Contrast,nCue,nConfig) = sum( p.trialEvents(p.trialEvents(:,1)==p.stimConfigurations(nConfig)...
+                    & p.trialEvents(:,2)==p.t1Contrasts(t1Contrast) & p.trialEvents(:,3)==p.t2Contrasts(t2Contrast),end) == nCue) == (p.minNumBlocks - p.numValidTrialsPerComb)*p.repetitions;
+                end
+            end
+        end
     end
 end
 
-trial_cueDistrib(:,end+1) = sum(trial_cueDistrib,2);
 trial_cueDistrib
 
 p.trialEvents % [stimConfiguration, t1Contrast, t2Contrast, targOrientation, surrOrientation, cueValidity]
@@ -848,6 +858,6 @@ cd(dataDir);
 theData(p.runNumber).t = t;
 theData(p.runNumber).p = p;
 theData(p.runNumber).data = data;
-eval(['save vTA_surrSuppression_', p.subject, '.mat theData'])
+eval(['save vTA_noSurround_', p.subject, '.mat theData'])
 
 cd(expDir);

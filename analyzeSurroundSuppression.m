@@ -1,7 +1,7 @@
 %%% analyzeSurroundSurpression
 function [rawData] = analyzeSurroundSurpression(subject)
 
-subject = 'Pre-Pilot_LR';
+subject = 'Pre-Pilot_YW';
 
 plotData = 'Yes';
 
@@ -186,16 +186,16 @@ for nConfig = 1:length(stimConfigs)
         end
    end
 end
-
+% 
 for t1Contrast = 1:length(targetContrasts)
     for t2Contrast = 1:length(targetContrasts)
         contrastMatrix1(t1Contrast,t2Contrast) = mean(rawData(rawData(:,1)==1 & rawData(:,2)==1 & rawData(:,3)==targetContrasts(t1Contrast) & rawData(:,4)==targetContrasts(t2Contrast),5));
     end
 end
-
-for iContrast = 1:length(targetContrasts)
-    contrastMatrix1(iContrast,:) = contrastMatrix1(iContrast,:) / targetContrasts(iContrast); 
-end
+% 
+% for iContrast = 1:length(targetContrasts)
+%     contrastMatrix1(iContrast,:) = contrastMatrix1(iContrast,:) / targetContrasts(iContrast); 
+% end
 
 %% PLOT DATA
 if strcmp(plotData, 'Yes')
@@ -267,16 +267,14 @@ if strcmp(plotData, 'Yes')
     ylim([0 1])
     
     
-    % plot contrast matrix (iContrast, jContrast, nCue, nConfig)
-    for nConfig = 1:length(stimConfigs)
-        for nCue = 1:2   
-            figure
-            heatmap(contrastMatrix(:,:,nCue,nConfig))
-        end
-    end
+%     % plot contrast matrix (iContrast, jContrast, nCue, nConfig)
+%     for nConfig = 1:length(stimConfigs)
+%         for nCue = 1:2   
+%             figure
+%             heatmap(contrastMatrix(:,:,nCue,nConfig))
+%         end
+%     end
 
-       
-    
 end
 
 cd(expDir)
