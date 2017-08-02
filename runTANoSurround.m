@@ -189,7 +189,7 @@ for nStimConfig = 1:length(p.stimConfigurations)
            for nValid = 1:p.numValidTrialsPerComb*p.repetitions
                trialCues(contrastCombIndx(nValid)) = 1;              
            end
-           for nInvalid = 1+(p.numValidTrialsPerComb*p.repetitions):p.numValidTrialsPerComb*p.repetitions+((p.minNumBlocks-p.numValidTrialsPerComb)*p.repetitions)
+           for nInvalid = (p.numValidTrialsPerComb*p.repetitions):p.numValidTrialsPerComb*p.repetitions+((p.minNumBlocks-p.numValidTrialsPerComb)*p.repetitions)
                trialCues(contrastCombIndx(nInvalid)) = 2;
            end
        end

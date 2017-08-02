@@ -1,7 +1,7 @@
 %%% analyzeSurroundSurpression
 function [rawData] = analyzeSurroundSurpression(subject)
 
-subject = 'Pre-Pilot_LR';
+subject = 'Pre-Pilot-LR';
 
 plotData = 'Yes';
 
@@ -16,10 +16,12 @@ else
     error('Data file does not exist.')
 end
 
+stimConfigNames = theData(runNumber).p.stimConfigurationsNames;
 stimConfigs = theData(runNumber).p.stimConfigurations;
 targetContrasts = theData(runNumber).p.t1Contrasts;
 estimatedContrast = theData(runNumber).data.estimatedContrast; %subject response
 differenceContrast = theData(runNumber).data.differenceContrast; %how far off from target
+cueNames = theData(runNumber).p.trialCuesNames;
 
 % [stimConfig cueValidity t1Contrast t2Contrast estimatedContrast differenceContrast]
 rawData = [theData(runNumber).p.trialEvents(:,1), theData(runNumber).p.trialEvents(:,end), theData(runNumber).p.trialEvents(:,2),...
@@ -96,21 +98,23 @@ for nConfig = 1:length(stimConfigs)
     for nCue = 1:2   
         for iContrast = 1:length(targetContrasts)     
             for jContrast = 1:length(targetContrasts)
-                contrastMatrix(iContrast,jContrast,nCue,nConfig) = mean(rawData(rawData(:,1)==nConfig & rawData(:,2)==nCue & rawData(:,3)==targetContrasts(iContrast) & rawData(:,4)==targetContrasts(jContrast),5));
+                contrastMatrix(iContrast,jContrast,nCue,nConfig) = mean(rawData(rawData(:,1)==stimConfigs(nConfig) & rawData(:,2)==nCue & rawData(:,3)==targetContrasts(iContrast) & rawData(:,4)==targetContrasts(jContrast),5));
             end
         end
    end
 end
-% 
-for t1Contrast = 1:length(targetContrasts)
-    for t2Contrast = 1:length(targetContrasts)
-        contrastMatrix1(t1Contrast,t2Contrast) = mean(rawData(rawData(:,1)==1 & rawData(:,2)==1 & rawData(:,3)==targetContrasts(t1Contrast) & rawData(:,4)==targetContrasts(t2Contrast),5));
+
+contrastMeans = nan(length(targetContrasts),length(targetContrasts));
+
+for iContrast = 1:length(targetContrasts)
+    for jContrast = 1:length(targetContrasts)
+        contrastMeans(iContrast,jContrast) = mean([targetContrasts(iContrast) targetContrasts(jContrast)]);    
     end
 end
-% 
-% for iContrast = 1:length(targetContrasts)
-%     contrastMatrix1(iContrast,:) = contrastMatrix1(iContrast,:) / targetContrasts(iContrast); 
-% end
+
+figure
+heatmap(targetContrasts, targetContrasts, contrastMeans)
+title('contrast averages')
 
 %% PLOT DATA
 if strcmp(plotData, 'Yes')
@@ -129,13 +133,15 @@ if strcmp(plotData, 'Yes')
     ylim([0 1])
     
     
-%     % plot contrast matrix (iContrast, jContrast, nCue, nConfig)
-%     for nConfig = 1:length(stimConfigs)
-%         for nCue = 1:2   
-%             figure
-%             heatmap(contrastMatrix(:,:,nCue,nConfig))
-%         end
-%     end
+    % plot contrast matrix (iContrast, jContrast, nCue, nConfig)
+    for nConfig = 1:length(stimConfigs)
+        for nCue = 1:2   
+            figure
+            heatmap(targetContrasts, targetContrasts, contrastMatrix(:,:,nCue,nConfig))
+            title([stimConfigNames(nConfig) cueNames(nCue)])
+            
+        end
+    end
 
 end
 

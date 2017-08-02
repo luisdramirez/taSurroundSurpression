@@ -48,8 +48,8 @@ end
 % Check which devicenumber the keyboard is assigned to
 deviceNumber = 0;
 [keyBoardIndices, productNames] = GetKeyboardIndices;
-% deviceString = 'Corsair Corsair K95W Gaming Keyboard';
-deviceString = 'Apple Inc. Apple Keyboard';
+deviceString = 'Corsair Corsair K95W Gaming Keyboard';
+% deviceString = 'Apple Inc. Apple Keyboard';
 % deviceString = 'Apple Keyboard';
 % deviceString = 'CHICONY USB Keyboard';
 % deviceString = 'Apple Internal Keyboard / Trackpad';
@@ -142,14 +142,6 @@ p.innerFixation = p.outerFixation/1.5;
 p.trialEvents = [F1, F2, F3];
 
 p.numTrialsPerConfig = sum(p.trialEvents(:,1) == 1);
-% p.numBaselineTrials = p.numTrialsPerConfig/2;
-
-% baselineConditions = repmat(5:6, [p.numBaselineTrials, 1]);
-% contrasts = repmat([p.t1Contrasts' p.t2Contrasts'], [length(baselineConditions)/p.numContrasts 1]);
-% 
-% p.trialEvents = [p.trialEvents;...
-%     [baselineConditions(:) [[contrasts(:,1) Shuffle(contrasts(:,2))]; ... % zeros(p.numContrasts*p.numBlocks,1)
-%     [contrasts(:,1) Shuffle(contrasts(:,2))]]  ]]; %
 
 p.numTrials = size(p.trialEvents,1);
 p.numTrialsPerBreak = p.numTrials/p.numBreaks;
@@ -185,7 +177,7 @@ for nStimConfig = 1:length(p.stimConfigurations)
            for nValid = 1:p.numValidTrialsPerComb*p.repetitions
                trialCues(contrastCombIndx(nValid)) = 1;              
            end
-           for nInvalid = 1+p.numValidTrialsPerComb*p.repetitions:(1+p.numValidTrialsPerComb*p.repetitions)+((p.minNumBlocks-p.numValidTrialsPerComb)*p.repetitions)
+           for nInvalid = 1+p.numValidTrialsPerComb*p.repetitions:(p.numValidTrialsPerComb*p.repetitions)+((p.minNumBlocks-p.numValidTrialsPerComb)*p.repetitions)
                trialCues(contrastCombIndx(nInvalid)) = 2;
            end
        end
@@ -214,7 +206,7 @@ for nConfig = 1:length(p.stimConfigurations)
     end
 end
 
-trial_cueDistrib
+trial_cueDistrib;
 
 p.trialEvents % [stimConfiguration, t1Contrast, t2Contrast, targOrientation, surrOrientation, cueValidity]
 p.trialEvents = Shuffle(p.trialEvents,2);
@@ -533,7 +525,7 @@ for nTrial = 1:p.numTrials
     Screen('DrawTexture', window, centerStimulus1(nTrial), [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
     
     % Draw surroundStimulus if not baseline condition
-    if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6  
+    if p.trialEvents(nTrial,1) ~= 5 && p.trialEvents(nTrial,1) ~= 6  
         Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,5))
         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
     end
@@ -580,7 +572,7 @@ for nTrial = 1:p.numTrials
     Screen('DrawTexture', window, centerStimulus2(nTrial), [], CenterRectOnPoint([0 0 p.centerSize p.centerSize], patch(1), patch(2)), p.trialEvents(nTrial,4))
     
     % Draw surroundStimulus if not baseline condition
-    if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6  
+    if p.trialEvents(nTrial,1) ~= 5 && p.trialEvents(nTrial,1) ~= 6  
         Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,5))
         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
     end
@@ -651,11 +643,6 @@ for nTrial = 1:p.numTrials
        end
     end
     
-    % Draw surroundStimulus if not baseline condition
-%     if p.trialEvents(nTrial,1) ~= 5 || p.trialEvents(nTrial,1) ~= 6 
-%         Screen('DrawTexture', window, surroundStimulus(nTrial), [], CenterRectOnPoint([0 0 p.surroundSize p.surroundSize], patch(1), patch(2)), p.trialEvents(nTrial,5))
-%         Screen('FrameOval', window, p.grey, CenterRectOnPoint([0 0 p.centerSize+p.gapSize p.centerSize+p.gapSize], patch(1), patch(2))', p.gapSize, p.gapSize)
-%     end
 
     % Draw Fixation
     Screen('FillOval', window, green, [centerX-p.outerFixation centerY-p.outerFixation centerX+p.outerFixation centerY+p.outerFixation])
